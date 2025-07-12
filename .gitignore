@@ -1,0 +1,14 @@
+# Node
+**/node_modules/
+**/build/
+**/dist/
+
+# Env files
+**/.env
+
+# Uploads (images, etc.)
+**/uploads/
+
+# Lockfiles (optional)
+**/package-lock.json
+**/yarn.lock
