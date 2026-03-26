@@ -25,8 +25,19 @@ const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 // Middleware
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use((req, res, next) => {
+  if (req.body !== undefined) return next();
+  let raw = '';
+  req.on('data', chunk => { raw += chunk; });
+  req.on('end', () => {
+    if (raw) {
+      try { req.body = JSON.parse(raw); } catch { req.body = {}; }
+    } else {
+      req.body = {};
+    }
+    next();
+  });
+});
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental', {
