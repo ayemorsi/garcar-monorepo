@@ -19,14 +19,14 @@ const notificationRoutes = require('./routes/notification');
 const app = express();
 const port = process.env.PORT || 5001;
 
-const secretKey = 'your_secret_key'; // Should be stored in environment variables
+const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/carRental', {
+mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
