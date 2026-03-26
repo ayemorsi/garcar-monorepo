@@ -245,7 +245,7 @@ export default function SignUpPage() {
               <div>
                 <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-1">Selected Building</p>
                 <h3 className="text-lg font-bold text-gray-900">{selectedBuilding.name}</h3>
-                <p className="text-sm text-green-600 font-medium">{selectedBuilding.available} GarKars available here</p>
+                <p className="text-sm text-green-600 font-medium">Official GarKar partner building</p>
               </div>
               <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
