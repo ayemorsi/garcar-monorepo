@@ -188,6 +188,14 @@ export const api = {
     request(`/admin/users/${id}/approve`, { method: 'PUT' }),
   adminGetOnlineUsers: () =>
     request('/admin/online-users'),
+  adminGetBuildings: () =>
+    request('/admin/buildings'),
+  adminAddBuilding: (body: { name: string; address: string }) =>
+    request('/admin/buildings', { method: 'POST', body: JSON.stringify(body) }),
+  adminUpdateBuilding: (id: string, body: { name?: string; address?: string; active?: boolean }) =>
+    request(`/admin/buildings/${id}`, { method: 'PUT', body: JSON.stringify(body) }),
+  adminDeleteBuilding: (id: string) =>
+    request(`/admin/buildings/${id}`, { method: 'DELETE' }),
 
   // Reviews
   createReview: (body: {

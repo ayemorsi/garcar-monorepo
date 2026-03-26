@@ -6,6 +6,7 @@ const User = require('../models/User');
 const Car = require('../models/Car');
 const Booking = require('../models/Booking');
 const AppSettings = require('../models/AppSettings');
+const Building = require('../models/Building');
 
 const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
@@ -405,6 +406,46 @@ router.get('/admin/online-users', authenticate, adminOnly, async (req, res) => {
   } catch (error) {
     console.error('Error fetching online users:', error);
     res.status(500).json({ message: 'Error fetching online users' });
+  }
+});
+
+// ─── Buildings ─────────────────────────────────────────────────────────────────
+
+router.get('/admin/buildings', authenticate, adminOnly, async (req, res) => {
+  try {
+    const buildings = await Building.find().sort({ createdAt: -1 });
+    res.json(buildings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching buildings' });
+  }
+});
+
+router.post('/admin/buildings', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { name, address } = req.body;
+    const building = await Building.create({ name, address });
+    res.status(201).json(building);
+  } catch (error) {
+    res.status(500).json({ message: 'Error creating building' });
+  }
+});
+
+router.put('/admin/buildings/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    const building = await Building.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!building) return res.status(404).json({ message: 'Building not found' });
+    res.json(building);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating building' });
+  }
+});
+
+router.delete('/admin/buildings/:id', authenticate, adminOnly, async (req, res) => {
+  try {
+    await Building.findByIdAndDelete(req.params.id);
+    res.json({ message: 'Building deleted' });
+  } catch (error) {
+    res.status(500).json({ message: 'Error deleting building' });
   }
 });
 

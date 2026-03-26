@@ -1,41 +1,44 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Car, MapPin, CheckCircle, Key, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
 import { saveAuth } from '@/lib/auth';
 
-const MOCK_BUILDINGS = [
-  { id: '1', name: 'The Skyline Residents', address: '450 Market St, San Francisco', available: 6 },
-  { id: '2', name: 'Skyline Terrace', address: '1200 Pacific Ave, San Francisco', available: 3 },
-  { id: '3', name: 'Pinecrest Apartments', address: '789 Pine St, San Francisco', available: 8 },
-];
+type Building = { _id: string; name: string; address: string };
 
 export default function SignUpPage() {
   const router = useRouter();
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
     email: '',
     password: '',
-    city: 'San Francisco',
     buildingSearch: '',
     buildingId: '',
   });
   const [showDropdown, setShowDropdown] = useState(false);
-  const [selectedBuilding, setSelectedBuilding] = useState<(typeof MOCK_BUILDINGS)[0] | null>(null);
+  const [selectedBuilding, setSelectedBuilding] = useState<Building | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const filteredBuildings = MOCK_BUILDINGS.filter((b) =>
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'}/api/buildings`)
+      .then((r) => r.json())
+      .then(setBuildings)
+      .catch(() => {});
+  }, []);
+
+  const filteredBuildings = buildings.filter((b) =>
     b.name.toLowerCase().includes(form.buildingSearch.toLowerCase())
   );
 
-  function selectBuilding(b: (typeof MOCK_BUILDINGS)[0]) {
+  function selectBuilding(b: Building) {
     setSelectedBuilding(b);
-    setForm((f) => ({ ...f, buildingSearch: b.name, buildingId: b.id }));
+    setForm((f) => ({ ...f, buildingSearch: b.name, buildingId: b._id }));
     setShowDropdown(false);
   }
 
@@ -159,15 +162,6 @@ export default function SignUpPage() {
               <MapPin className="w-4 h-4 text-blue-600" /> Find Your Building
             </label>
             <div className="flex gap-2 mb-2">
-              <select
-                value={form.city}
-                onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
-                className="border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option>San Francisco</option>
-                <option>Los Angeles</option>
-                <option>New York</option>
-              </select>
               <div className="relative flex-1">
                 <input
                   type="text"
@@ -185,7 +179,7 @@ export default function SignUpPage() {
                   <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                     {filteredBuildings.map((b) => (
                       <button
-                        key={b.id}
+                        key={b._id}
                         type="button"
                         onClick={() => selectBuilding(b)}
                         className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
@@ -196,7 +190,7 @@ export default function SignUpPage() {
                         <div>
                           <p className="text-sm font-medium text-gray-900 flex items-center gap-1">
                             {b.name}
-                            {selectedBuilding?.id === b.id && (
+                            {selectedBuilding?._id === b._id && (
                               <CheckCircle className="w-4 h-4 text-blue-600" />
                             )}
                           </p>

@@ -7,6 +7,7 @@ const multer = require('multer');
 const bodyParser = require('body-parser');
 const User = require('./models/User'); // Ensure the correct path
 const AppSettings = require('./models/AppSettings');
+const Building = require('./models/Building');
 const Booking = require('./models/Booking');
 const carRoutes = require('./routes/car');
 const bookingRoutes = require('./routes/booking');
@@ -32,8 +33,18 @@ mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-.then(() => {
+.then(async () => {
   console.log('Connected to MongoDB');
+  // Seed default buildings if none exist
+  const count = await Building.countDocuments();
+  if (count === 0) {
+    await Building.insertMany([
+      { name: '220 Twentieth Street Apartments', address: '220 20th St S, Arlington, VA 22202' },
+      { name: 'Crystal Flats', address: '505 18th St S, Arlington, VA 22202' },
+      { name: 'Crystal City Lofts', address: '305 10th St S, Arlington, VA 22202' },
+    ]);
+    console.log('Default buildings seeded');
+  }
 })
 .catch(err => {
   console.error('MongoDB connection error:', err);
@@ -134,6 +145,16 @@ app.get('/api/verification/:userId', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error fetching verification data:', error);
     res.status(500).send('Error fetching verification data');
+  }
+});
+
+// Public buildings list (for signup page)
+app.get('/api/buildings', async (req, res) => {
+  try {
+    const buildings = await Building.find({ active: true }).select('name address');
+    res.json(buildings);
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching buildings' });
   }
 });
 

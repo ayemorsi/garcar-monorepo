@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Settings, UserCheck, Wifi, RefreshCw } from 'lucide-react';
+import { Settings, UserCheck, Wifi, RefreshCw, Building2, Plus, Trash2 } from 'lucide-react';
 import { api } from '@/lib/api';
 
 interface AppSettings {
@@ -22,6 +22,13 @@ interface OnlineUser {
   username: string;
   lastSeen: string;
   role: string;
+}
+
+interface Building {
+  _id: string;
+  name: string;
+  address: string;
+  active: boolean;
 }
 
 function Toggle({
@@ -66,23 +73,29 @@ export default function AdminSettingsPage() {
   const [settings, setSettings] = useState<AppSettings | null>(null);
   const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
   const [onlineUsers, setOnlineUsers] = useState<OnlineUser[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingKey, setSavingKey] = useState<string>('');
   const [approvingId, setApprovingId] = useState<string>('');
+  const [deletingBuildingId, setDeletingBuildingId] = useState<string>('');
+  const [newBuilding, setNewBuilding] = useState({ name: '', address: '' });
+  const [addingBuilding, setAddingBuilding] = useState(false);
   const [error, setError] = useState<string>('');
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      const [s, p, o] = await Promise.all([
+      const [s, p, o, b] = await Promise.all([
         api.adminGetSettings() as Promise<AppSettings>,
         api.adminGetPendingUsers() as Promise<PendingUser[]>,
         api.adminGetOnlineUsers() as Promise<OnlineUser[]>,
+        api.adminGetBuildings() as Promise<Building[]>,
       ]);
       setSettings(s);
       setPendingUsers(p);
       setOnlineUsers(o);
+      setBuildings(b);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings');
     } finally {
@@ -122,6 +135,42 @@ export default function AdminSettingsPage() {
       setError(err instanceof Error ? err.message : 'Failed to approve user');
     } finally {
       setApprovingId('');
+    }
+  }
+
+  async function addBuilding(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newBuilding.name || !newBuilding.address) return;
+    setAddingBuilding(true);
+    try {
+      const b = await api.adminAddBuilding(newBuilding) as Building;
+      setBuildings((prev) => [b, ...prev]);
+      setNewBuilding({ name: '', address: '' });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add building');
+    } finally {
+      setAddingBuilding(false);
+    }
+  }
+
+  async function deleteBuilding(id: string) {
+    setDeletingBuildingId(id);
+    try {
+      await api.adminDeleteBuilding(id);
+      setBuildings((prev) => prev.filter((b) => b._id !== id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete building');
+    } finally {
+      setDeletingBuildingId('');
+    }
+  }
+
+  async function toggleBuilding(b: Building) {
+    try {
+      const updated = await api.adminUpdateBuilding(b._id, { active: !b.active }) as Building;
+      setBuildings((prev) => prev.map((x) => x._id === b._id ? updated : x));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update building');
     }
   }
 
@@ -250,6 +299,64 @@ export default function AdminSettingsPage() {
                     <UserCheck className="w-3 h-3" />
                   )}
                   Approve
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Buildings */}
+      <div className="bg-gray-900 border border-gray-800 rounded-xl">
+        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-blue-400" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Apartment Buildings</h2>
+          <span className="ml-auto text-xs text-gray-500">{buildings.filter(b => b.active).length} active</span>
+        </div>
+
+        {/* Add building form */}
+        <form onSubmit={addBuilding} className="px-6 py-4 border-b border-gray-800 flex gap-3 flex-wrap">
+          <input
+            type="text"
+            placeholder="Building name"
+            value={newBuilding.name}
+            onChange={(e) => setNewBuilding((n) => ({ ...n, name: e.target.value }))}
+            className="flex-1 min-w-40 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <input
+            type="text"
+            placeholder="Address"
+            value={newBuilding.address}
+            onChange={(e) => setNewBuilding((n) => ({ ...n, address: e.target.value }))}
+            className="flex-1 min-w-48 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          <button
+            type="submit"
+            disabled={addingBuilding || !newBuilding.name || !newBuilding.address}
+            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+          >
+            <Plus className="w-4 h-4" />
+            Add
+          </button>
+        </form>
+
+        {buildings.length === 0 ? (
+          <div className="px-6 py-8 text-center text-sm text-gray-500">No buildings yet</div>
+        ) : (
+          <ul className="divide-y divide-gray-800">
+            {buildings.map((b) => (
+              <li key={b._id} className="px-6 py-4 flex items-center gap-4">
+                <div className="flex-1 min-w-0">
+                  <p className={`text-sm font-medium truncate ${b.active ? 'text-white' : 'text-gray-500 line-through'}`}>{b.name}</p>
+                  <p className="text-xs text-gray-500 truncate">{b.address}</p>
+                </div>
+                <Toggle checked={b.active} onChange={() => toggleBuilding(b)} />
+                <button
+                  onClick={() => deleteBuilding(b._id)}
+                  disabled={deletingBuildingId === b._id}
+                  className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <Trash2 className="w-4 h-4" />
                 </button>
               </li>
             ))}
