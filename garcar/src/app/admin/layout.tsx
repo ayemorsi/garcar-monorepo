@@ -11,6 +11,7 @@ import {
   LogOut,
   ShieldAlert,
   Activity,
+  Settings,
 } from 'lucide-react';
 
 const NAV = [
@@ -19,6 +20,7 @@ const NAV = [
   { href: '/admin/listings', label: 'Listings', icon: Car },
   { href: '/admin/bookings', label: 'Bookings', icon: CalendarCheck },
   { href: '/admin/activity', label: 'Activity', icon: Activity },
+  { href: '/admin/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {

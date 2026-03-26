@@ -178,6 +178,16 @@ export const api = {
   },
   adminPromote: () =>
     request('/admin/promote', { method: 'POST' }),
+  adminGetSettings: () =>
+    request('/admin/settings'),
+  adminUpdateSettings: (body: { registrationOpen?: boolean; requireApproval?: boolean }) =>
+    request('/admin/settings', { method: 'PUT', body: JSON.stringify(body) }),
+  adminGetPendingUsers: () =>
+    request('/admin/pending-users'),
+  adminApproveUser: (id: string) =>
+    request(`/admin/users/${id}/approve`, { method: 'PUT' }),
+  adminGetOnlineUsers: () =>
+    request('/admin/online-users'),
 
   // Reviews
   createReview: (body: {

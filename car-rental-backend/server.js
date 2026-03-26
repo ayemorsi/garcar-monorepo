@@ -6,6 +6,7 @@ const cors = require('cors');
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const User = require('./models/User'); // Ensure the correct path
+const AppSettings = require('./models/AppSettings');
 const Booking = require('./models/Booking');
 const carRoutes = require('./routes/car');
 const bookingRoutes = require('./routes/booking');
@@ -51,6 +52,7 @@ const authenticate = (req, res, next) => {
         return res.sendStatus(403);
       }
       req.user = user;
+      User.findByIdAndUpdate(user.userId, { lastSeen: new Date() }).exec();
       next();
     });
   } else {
@@ -61,13 +63,18 @@ const authenticate = (req, res, next) => {
 // Route to handle user registration
 app.post('/api/register', async (req, res) => {
   try {
+    const settings = await AppSettings.findOne() || new AppSettings();
+    if (!settings.registrationOpen) {
+      return res.status(403).send('Registration is currently closed');
+    }
     const { username, password } = req.body;
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send('Username already exists');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const user = new User({ username, password: hashedPassword });
+    const approved = !settings.requireApproval;
+    const user = new User({ username, password: hashedPassword, approved });
     await user.save();
     res.status(201).send('User registered successfully');
   } catch (error) {
@@ -82,6 +89,9 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
     if (user && await bcrypt.compare(password, user.password)) {
+      if (user.approved === false) {
+        return res.status(401).send('Your account is pending admin approval');
+      }
       const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
       res.json({ token });
     } else {

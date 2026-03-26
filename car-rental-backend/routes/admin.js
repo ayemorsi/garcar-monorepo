@@ -5,6 +5,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const Car = require('../models/Car');
 const Booking = require('../models/Booking');
+const AppSettings = require('../models/AppSettings');
 
 const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
@@ -332,6 +333,78 @@ router.get('/admin/bookings', authenticate, adminOnly, async (req, res) => {
   } catch (error) {
     console.error('Error fetching admin bookings:', error);
     res.status(500).json({ message: 'Error fetching bookings' });
+  }
+});
+
+// ─── App Settings ──────────────────────────────────────────────────────────────
+
+router.get('/admin/settings', authenticate, adminOnly, async (req, res) => {
+  try {
+    let settings = await AppSettings.findOne();
+    if (!settings) {
+      settings = await AppSettings.create({});
+    }
+    res.json(settings);
+  } catch (error) {
+    console.error('Error fetching settings:', error);
+    res.status(500).json({ message: 'Error fetching settings' });
+  }
+});
+
+router.put('/admin/settings', authenticate, adminOnly, async (req, res) => {
+  try {
+    const { registrationOpen, requireApproval } = req.body;
+    const updates = {};
+    if (registrationOpen !== undefined) updates.registrationOpen = registrationOpen;
+    if (requireApproval !== undefined) updates.requireApproval = requireApproval;
+
+    let settings = await AppSettings.findOne();
+    if (!settings) {
+      settings = await AppSettings.create(updates);
+    } else {
+      settings = await AppSettings.findByIdAndUpdate(settings._id, updates, { new: true });
+    }
+    res.json(settings);
+  } catch (error) {
+    console.error('Error updating settings:', error);
+    res.status(500).json({ message: 'Error updating settings' });
+  }
+});
+
+// ─── Pending Users ─────────────────────────────────────────────────────────────
+
+router.get('/admin/pending-users', authenticate, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({ approved: false }).select('-password -verificationData');
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching pending users:', error);
+    res.status(500).json({ message: 'Error fetching pending users' });
+  }
+});
+
+router.put('/admin/users/:id/approve', authenticate, adminOnly, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(req.params.id, { approved: true }, { new: true }).select('-password');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch (error) {
+    console.error('Error approving user:', error);
+    res.status(500).json({ message: 'Error approving user' });
+  }
+});
+
+// ─── Online Users ──────────────────────────────────────────────────────────────
+
+router.get('/admin/online-users', authenticate, adminOnly, async (req, res) => {
+  try {
+    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+    const users = await User.find({ lastSeen: { $gt: fiveMinutesAgo } })
+      .select('_id username lastSeen role');
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching online users:', error);
+    res.status(500).json({ message: 'Error fetching online users' });
   }
 });
 

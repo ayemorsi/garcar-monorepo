@@ -19,7 +19,9 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   paused: { type: Boolean, default: false },
+  approved: { type: Boolean, default: true },
   building: { type: String, default: '' },
+  lastSeen: { type: Date },
   createdAt: { type: Date, default: Date.now },
 });
 
