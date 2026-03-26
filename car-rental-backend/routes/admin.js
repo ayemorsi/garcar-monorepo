@@ -6,7 +6,7 @@ const User = require('../models/User');
 const Car = require('../models/Car');
 const Booking = require('../models/Booking');
 
-const secretKey = 'your_secret_key';
+const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 

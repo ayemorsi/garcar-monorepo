@@ -4,7 +4,7 @@ const Message = require('../models/Message');
 const User = require('../models/User');
 const router = express.Router();
 
-const secretKey = 'your_secret_key';
+const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

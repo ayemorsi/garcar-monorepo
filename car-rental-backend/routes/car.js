@@ -3,7 +3,7 @@ const Car = require('../models/Car');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-const secretKey = 'your_secret_key'; // Should be stored in environment variables
+const secretKey = process.env.JWT_SECRET || 'your_secret_key'; // Should be stored in environment variables
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {

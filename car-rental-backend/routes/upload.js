@@ -4,7 +4,7 @@ const path = require('path');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
-const secretKey = 'your_secret_key';
+const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;

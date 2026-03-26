@@ -5,7 +5,7 @@ const Car = require('../models/Car');
 const Notification = require('../models/Notification');
 const router = express.Router();
 
-const secretKey = 'your_secret_key';
+const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
