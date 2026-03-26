@@ -5,7 +5,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Car, Shield, Upload, CheckCircle, Zap } from 'lucide-react';
 import { api } from '@/lib/api';
-import { saveAuth } from '@/lib/auth';
 
 function VerifyResidencyContent() {
   const router = useRouter();

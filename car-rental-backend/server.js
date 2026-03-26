@@ -71,7 +71,10 @@ app.use(async (req, res, next) => {
 });
 
 // Multer setup for file uploads
-const upload = multer({ dest: '/tmp/uploads/' });
+const fs = require('fs');
+const UPLOAD_DIR = '/tmp/uploads';
+if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+const upload = multer({ dest: UPLOAD_DIR });
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {

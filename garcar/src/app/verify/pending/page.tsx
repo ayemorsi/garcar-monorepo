@@ -1,140 +1,96 @@
 'use client';
 
-import { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Car, CheckCircle, Clock, UserCircle, BookOpen } from 'lucide-react';
+import { Car, Clock, CheckCircle, Mail } from 'lucide-react';
 
-function VerificationPendingContent() {
-  const searchParams = useSearchParams();
-  const userId = searchParams.get('userId') || '';
-
-  const steps = [
-    { label: 'Sign Up', date: 'Completed on Oct 12, 2023', status: 'done' },
-    { label: 'Documents Uploaded', date: 'Completed on Oct 12, 2023', status: 'done' },
-    { label: 'Admin Review', date: 'In Progress — Usually takes < 24h', status: 'pending' },
-  ];
-
+export default function VerificationPendingPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex flex-col">
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex items-center">
           <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600">
             <Car className="w-6 h-6" />
             GarKar
           </Link>
-          <nav className="flex items-center gap-6 text-sm text-gray-600">
-            <Link href="/cars">Cars</Link>
-            <Link href="/community">Community</Link>
-            <Link href="/my-bookings">My Bookings</Link>
-          </nav>
         </div>
       </header>
 
-      <div className="max-w-2xl mx-auto px-6 py-16">
-        {/* Status card */}
-        <div className="bg-white rounded-2xl border border-gray-200 p-8 mb-8">
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-2">Verification Status</p>
-              <h1 className="text-3xl font-bold text-gray-900">We&apos;re verifying your residency</h1>
-              <p className="text-gray-500 mt-2">
-                The community admin at{' '}
-                <strong className="text-gray-900">GarKar admin</strong> is currently reviewing your
-                documents. This usually takes less than 24 hours.
-              </p>
-            </div>
-            <div className="shrink-0 ml-4">
-              <span className="inline-block border border-yellow-300 bg-yellow-50 rounded-full px-3 py-1 text-xs text-yellow-700 font-medium">
-                Pending Review
-              </span>
+      <div className="flex-1 flex items-center justify-center px-6 py-16">
+        <div className="max-w-md w-full text-center">
+
+          {/* Animated icon */}
+          <div className="relative w-24 h-24 mx-auto mb-8">
+            <div className="absolute inset-0 rounded-full bg-blue-100 animate-ping opacity-30" />
+            <div className="relative w-24 h-24 rounded-full bg-blue-600 flex items-center justify-center">
+              <Clock className="w-10 h-10 text-white" />
             </div>
           </div>
+
+          <h1 className="text-3xl font-bold text-gray-900 mb-3">
+            Document Submitted!
+          </h1>
+          <p className="text-gray-500 text-lg mb-8">
+            Your residency document is under review. We&apos;ll approve your account as soon as possible — usually within a few hours.
+          </p>
 
           {/* Steps */}
-          <div className="space-y-0">
-            {steps.map((step, i) => (
-              <div key={i} className="flex items-start gap-4">
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
-                      step.status === 'done'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-200 text-gray-500'
-                    }`}
-                  >
-                    {step.status === 'done' ? (
-                      <CheckCircle className="w-4 h-4" />
-                    ) : (
-                      <Clock className="w-4 h-4" />
-                    )}
-                  </div>
-                  {i < steps.length - 1 && <div className="w-0.5 h-8 bg-gray-200 my-1" />}
-                </div>
-                <div className="pb-6">
-                  <p className="text-sm font-semibold text-gray-900">{step.label}</p>
-                  <p className={`text-sm ${step.status === 'pending' ? 'text-blue-600' : 'text-gray-500'}`}>
-                    {step.date}
-                  </p>
-                </div>
+          <div className="bg-white rounded-2xl border border-gray-200 p-6 mb-6 text-left space-y-4">
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-4 h-4 text-white" />
               </div>
-            ))}
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Account Created</p>
+                <p className="text-xs text-gray-500">Done</p>
+              </div>
+            </div>
+            <div className="ml-4 w-0.5 h-4 bg-gray-200" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Document Uploaded</p>
+                <p className="text-xs text-gray-500">Done</p>
+              </div>
+            </div>
+            <div className="ml-4 w-0.5 h-4 bg-gray-200" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center shrink-0 animate-pulse">
+                <Clock className="w-4 h-4 text-white" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-900">Admin Review</p>
+                <p className="text-xs text-blue-600 font-medium">In progress — usually under 24 hours</p>
+              </div>
+            </div>
+            <div className="ml-4 w-0.5 h-4 bg-gray-200" />
+            <div className="flex items-center gap-4">
+              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-4 h-4 text-gray-400" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-gray-400">Access Granted</p>
+                <p className="text-xs text-gray-400">Waiting for approval</p>
+              </div>
+            </div>
           </div>
-        </div>
 
-        {/* While you wait */}
-        <div className="mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2 mb-4">
-            ✦ While you wait...
-          </h2>
-          <div className="grid grid-cols-2 gap-4">
-            <Link
-              href={`/profile/edit?userId=${userId}`}
-              className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="h-32 bg-amber-50 flex items-center justify-center">
-                <UserCircle className="w-16 h-16 text-amber-300" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900">Complete Profile</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Add a high-quality photo and additional driver details to speed up your first booking once approved.
-                </p>
-              </div>
-            </Link>
-
-            <Link
-              href="/faq"
-              className="bg-white rounded-2xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
-            >
-              <div className="h-32 bg-gray-100 flex items-center justify-center">
-                <BookOpen className="w-16 h-16 text-gray-400" />
-              </div>
-              <div className="p-4">
-                <h3 className="font-semibold text-gray-900">Browse FAQs</h3>
-                <p className="text-sm text-gray-500 mt-1">
-                  Learn about Serenity Oaks car-sharing rules, parking locations, and insurance guidelines.
-                </p>
-              </div>
-            </Link>
+          <div className="bg-blue-50 border border-blue-100 rounded-xl px-5 py-4 flex items-start gap-3 text-left mb-8">
+            <Mail className="w-5 h-5 text-blue-600 shrink-0 mt-0.5" />
+            <p className="text-sm text-gray-700">
+              Once approved, you&apos;ll be able to log in and start browsing cars in your building.
+            </p>
           </div>
-        </div>
 
-        <p className="text-sm text-center text-gray-500">
-          Questions? Our support team is here to help.{' '}
-          <Link href="/support" className="text-blue-600 font-medium hover:underline">
-            Contact Support
+          <Link
+            href="/auth/login"
+            className="inline-block text-sm text-blue-600 font-medium hover:underline"
+          >
+            Back to Login
           </Link>
-        </p>
+        </div>
       </div>
     </div>
-  );
-}
-
-export default function VerificationPendingPage() {
-  return (
-    <Suspense>
-      <VerificationPendingContent />
-    </Suspense>
   );
 }
