@@ -39,13 +39,15 @@ app.use((req, res, next) => {
   });
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(async () => {
-  console.log('Connected to MongoDB');
+// Connect to MongoDB — cached for serverless reuse
+let dbConnected = false;
+async function connectDB() {
+  if (dbConnected && mongoose.connection.readyState === 1) return;
+  await mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  });
+  dbConnected = true;
   // Seed default buildings if none exist
   const count = await Building.countDocuments();
   if (count === 0) {
@@ -54,11 +56,18 @@ mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental
       { name: 'Crystal Flats', address: '505 18th St S, Arlington, VA 22202' },
       { name: 'Crystal City Lofts', address: '305 10th St S, Arlington, VA 22202' },
     ]);
-    console.log('Default buildings seeded');
   }
-})
-.catch(err => {
-  console.error('MongoDB connection error:', err);
+}
+
+// Ensure DB is connected before every request
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('DB connection failed:', err);
+    res.status(500).json({ message: 'Database connection failed' });
+  }
 });
 
 // Multer setup for file uploads
