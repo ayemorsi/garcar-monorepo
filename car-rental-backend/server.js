@@ -38,7 +38,7 @@ mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental
 });
 
 // Multer setup for file uploads
-const upload = multer({ dest: 'uploads/' });
+const upload = multer({ dest: '/tmp/uploads/' });
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {
@@ -135,7 +135,7 @@ app.use('/api', reviewRoutes);
 app.use('/api', uploadRoutes);
 app.use('/api', adminRoutes);
 app.use('/api', notificationRoutes);
-app.use('/uploads', express.static('uploads'));
+app.use('/uploads', express.static('/tmp/uploads'));
 
 // GET /api/host/stats — summary stats for the logged-in host
 app.get('/api/host/stats', authenticate, async (req, res) => {

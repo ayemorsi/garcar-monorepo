@@ -18,7 +18,7 @@ function authenticate(req, res, next) {
 }
 
 const storage = multer.diskStorage({
-  destination: 'uploads/',
+  destination: '/tmp/uploads/',
   filename: (_req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
@@ -39,7 +39,8 @@ router.post('/upload', authenticate, upload.array('images', 10), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ message: 'No files uploaded' });
   }
-  const urls = req.files.map((f) => `/uploads/${f.filename}`);
+  const baseUrl = process.env.BACKEND_URL || '';
+  const urls = req.files.map((f) => `${baseUrl}/uploads/${f.filename}`);
   res.json({ urls });
 });
 
