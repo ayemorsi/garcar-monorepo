@@ -11,6 +11,7 @@ function VerifyResidencyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const userId = searchParams.get('userId') || '';
+  const building = searchParams.get('building') || '';
 
   const [file, setFile] = useState<File | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -35,14 +36,11 @@ function VerifyResidencyContent() {
     try {
       const formData = new FormData();
       formData.append('verificationDocument', file);
-      formData.append('state', 'CA');
-      formData.append('city', 'San Francisco');
-      formData.append('apartment', 'The Skyline Residents');
-      const result = await api.submitVerification(userId, formData);
-      // Backend returns a fresh token with isVerified:true — save it so the
-      // middleware cookie is updated before we navigate to /browse.
-      saveAuth(result.token, result.userId);
-      router.push('/browse');
+      formData.append('state', 'VA');
+      formData.append('city', 'Arlington');
+      formData.append('apartment', building);
+      await api.submitVerification(userId, formData);
+      router.push('/verify/pending');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Submission failed');
     } finally {
@@ -84,7 +82,7 @@ function VerifyResidencyContent() {
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-2">Verify Your Residency</h1>
         <p className="text-center text-gray-500 mb-8">
           To ensure the safety of our car-sharing community, please confirm you live at{' '}
-          <span className="font-semibold text-gray-800">The Skyline Residents</span>.
+          <span className="font-semibold text-gray-800">{building || 'your building'}</span>.
         </p>
 
         {/* Trust notice */}

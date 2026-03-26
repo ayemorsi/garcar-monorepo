@@ -40,13 +40,13 @@ function VerificationPendingContent() {
               <h1 className="text-3xl font-bold text-gray-900">We&apos;re verifying your residency</h1>
               <p className="text-gray-500 mt-2">
                 The community admin at{' '}
-                <strong className="text-gray-900">Serenity Oaks Apartments</strong> is currently reviewing your
+                <strong className="text-gray-900">GarKar admin</strong> is currently reviewing your
                 documents. This usually takes less than 24 hours.
               </p>
             </div>
             <div className="shrink-0 ml-4">
-              <span className="inline-block border border-gray-300 rounded-full px-3 py-1 text-xs text-gray-600">
-                Exclusively for Serenity Oaks Residents
+              <span className="inline-block border border-yellow-300 bg-yellow-50 rounded-full px-3 py-1 text-xs text-yellow-700 font-medium">
+                Pending Review
               </span>
             </div>
           </div>

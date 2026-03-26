@@ -30,6 +30,7 @@ interface UserProfile {
   username: string;
   avgRating: number;
   tripCount: number;
+  building?: string;
 }
 
 function formatDate(dateStr: string) {
@@ -196,8 +197,12 @@ export default function DashboardPage() {
               <h3 className="font-semibold text-gray-900 mb-3 flex items-center gap-2">
                 <MapPin className="w-4 h-4 text-blue-600" /> Your Building
               </h3>
-              <p className="text-sm font-medium text-gray-900">GarKar Community</p>
-              <p className="text-xs text-gray-500 mb-4">Verified Residents Network</p>
+              <p className="text-sm font-medium text-gray-900">
+                {profile?.building || 'GarKar Community'}
+              </p>
+              <p className="text-xs text-gray-500 mb-4">
+                {profile?.building ? 'Arlington, VA' : 'Verified Residents Network'}
+              </p>
               <Link
                 href="/browse"
                 className="mt-4 w-full block text-center bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-700 transition-colors"

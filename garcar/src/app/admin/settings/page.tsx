@@ -14,7 +14,12 @@ interface PendingUser {
   username: string;
   firstName?: string;
   lastName?: string;
+  building?: string;
   createdAt: string;
+  verificationData?: {
+    verificationDocument?: string;
+    apartment?: string;
+  };
 }
 
 interface OnlineUser {
@@ -277,16 +282,27 @@ export default function AdminSettingsPage() {
           <ul className="divide-y divide-gray-800">
             {pendingUsers.map((user) => (
               <li key={user._id} className="px-6 py-4 flex items-center justify-between gap-4">
-                <div>
+                <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white">{user.username}</p>
                   {(user.firstName || user.lastName) && (
-                    <p className="text-xs text-gray-400">
-                      {[user.firstName, user.lastName].filter(Boolean).join(' ')}
-                    </p>
+                    <p className="text-xs text-gray-400">{[user.firstName, user.lastName].filter(Boolean).join(' ')}</p>
+                  )}
+                  {user.building && (
+                    <p className="text-xs text-blue-400 mt-0.5">{user.building}</p>
                   )}
                   <p className="text-xs text-gray-500 mt-0.5">
                     Registered {new Date(user.createdAt).toLocaleDateString()}
                   </p>
+                  {user.verificationData?.verificationDocument && (
+                    <a
+                      href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'}/${user.verificationData.verificationDocument}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 mt-1 text-xs text-yellow-400 hover:text-yellow-300 underline"
+                    >
+                      View Document
+                    </a>
+                  )}
                 </div>
                 <button
                   onClick={() => approveUser(user._id)}

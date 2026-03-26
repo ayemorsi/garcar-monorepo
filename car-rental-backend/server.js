@@ -78,14 +78,14 @@ app.post('/api/register', async (req, res) => {
     if (!settings.registrationOpen) {
       return res.status(403).send('Registration is currently closed');
     }
-    const { username, password } = req.body;
+    const { username, password, building } = req.body;
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send('Username already exists');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const approved = !settings.requireApproval;
-    const user = new User({ username, password: hashedPassword, approved });
+    const user = new User({ username, password: hashedPassword, approved, building: building || '' });
     await user.save();
     res.status(201).send('User registered successfully');
   } catch (error) {
@@ -114,23 +114,20 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Route to handle user verification
+// Route to handle user verification (document submission — sets pending review)
 app.post('/api/verify/:userId', authenticate, upload.single('verificationDocument'), async (req, res) => {
   try {
     const { state, city, apartment } = req.body;
-    const verificationDocument = req.file.path;
+    const verificationDocument = req.file ? req.file.path : null;
+    if (!verificationDocument) {
+      return res.status(400).send('No document uploaded');
+    }
     await User.findByIdAndUpdate(req.params.userId, {
-      verificationData: {
-        state,
-        city,
-        apartment,
-        verificationDocument,
-      },
-      isVerified: true,
+      verificationData: { state, city, apartment, verificationDocument },
+      isVerified: false,
+      approved: false, // requires admin approval
     });
-    const user = await User.findById(req.params.userId);
-    const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
-    res.json({ token });
+    res.json({ message: 'Document submitted. Pending admin review.' });
   } catch (error) {
     console.error('Error submitting verification data:', error);
     res.status(500).send('Error submitting verification data');

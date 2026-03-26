@@ -376,7 +376,7 @@ router.put('/admin/settings', authenticate, adminOnly, async (req, res) => {
 
 router.get('/admin/pending-users', authenticate, adminOnly, async (req, res) => {
   try {
-    const users = await User.find({ approved: false }).select('-password -verificationData');
+    const users = await User.find({ approved: false }).select('-password');
     res.json(users);
   } catch (error) {
     console.error('Error fetching pending users:', error);
@@ -386,7 +386,7 @@ router.get('/admin/pending-users', authenticate, adminOnly, async (req, res) => 
 
 router.put('/admin/users/:id/approve', authenticate, adminOnly, async (req, res) => {
   try {
-    const user = await User.findByIdAndUpdate(req.params.id, { approved: true }, { new: true }).select('-password');
+    const user = await User.findByIdAndUpdate(req.params.id, { approved: true, isVerified: true }, { new: true }).select('-password');
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
