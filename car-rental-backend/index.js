@@ -5,11 +5,15 @@ const bodyParser = require('body-parser');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
-const User = require('./models/User'); // Import the User model
-const carRoutes = require('./routes/car'); // Import car routes
+const User = require('./models/User');
+const Booking = require('./models/Booking');
+const carRoutes = require('./routes/car');
+const bookingRoutes = require('./routes/booking');
+const messageRoutes = require('./routes/message');
+const userRoutes = require('./routes/user');
 
 const app = express();
-const port = 5001; // Port number
+const port = 5001;
 
 const secretKey = 'your_secret_key'; // Should be stored in environment variables
 
@@ -25,6 +29,23 @@ mongoose.connect('mongodb://localhost:27017/carRental', { useNewUrlParser: true,
     .catch(err => {
         console.error('MongoDB connection error:', err);
     });
+
+// Middleware to authenticate and get user ID from token
+const authenticate = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader) {
+    const token = authHeader.split(' ')[1];
+    jwt.verify(token, secretKey, (err, user) => {
+      if (err) {
+        return res.sendStatus(403);
+      }
+      req.user = user;
+      next();
+    });
+  } else {
+    res.sendStatus(401);
+  }
+};
 
 // Register endpoint
 app.post('/api/register', async (req, res) => {
@@ -61,23 +82,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Middleware to authenticate and get user ID from token
-const authenticate = (req, res, next) => {
-  const authHeader = req.headers.authorization;
-  if (authHeader) {
-    const token = authHeader.split(' ')[1];
-    jwt.verify(token, secretKey, (err, user) => {
-      if (err) {
-        return res.sendStatus(403);
-      }
-      req.user = user;
-      next();
-    });
-  } else {
-    res.sendStatus(401);
-  }
-};
-
 // Verify user endpoint with verification data
 const upload = multer({ dest: 'uploads/' });
 app.post('/api/verify/:userId', authenticate, upload.single('verificationDocument'), async (req, res) => {
@@ -113,8 +117,42 @@ app.get('/api/verification/:userId', authenticate, async (req, res) => {
   }
 });
 
+// GET /api/host/stats — host dashboard stats
+app.get('/api/host/stats', authenticate, async (req, res) => {
+  try {
+    const ownerId = req.user.userId;
+    const Car = require('./models/Car');
+
+    const [allBookings, carsCount] = await Promise.all([
+      Booking.find({ ownerId }),
+      Car.countDocuments({ userId: ownerId }),
+    ]);
+
+    const completedBookings = allBookings.filter(b => b.status === 'completed');
+    const activeBookings = allBookings.filter(b => b.status === 'active' || b.status === 'confirmed').length;
+    const totalEarnings = completedBookings.reduce((sum, b) => sum + b.totalPrice, 0);
+
+    // Stub: no review system yet, return 0
+    const avgRating = 0;
+
+    res.json({
+      totalEarnings,
+      activeBookings,
+      completedBookings: completedBookings.length,
+      avgRating,
+      carsCount,
+    });
+  } catch (error) {
+    console.error('Error fetching host stats:', error);
+    res.status(500).json({ message: 'Error fetching host stats' });
+  }
+});
+
 // Use routes
 app.use('/api', carRoutes);
+app.use('/api', bookingRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', userRoutes);
 
 // Start the server
 app.listen(port, () => {

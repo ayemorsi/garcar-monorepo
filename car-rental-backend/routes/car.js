@@ -11,75 +11,131 @@ const authenticate = (req, res, next) => {
   if (authHeader) {
     const token = authHeader.split(' ')[1];
     jwt.verify(token, secretKey, (err, decoded) => {
-      if (err) return res.status(401).send('Unauthorized');
+      if (err) return res.status(401).json({ message: 'Unauthorized' });
+      req.user = decoded;
       req.userId = decoded.userId;
       next();
     });
   } else {
-    return res.status(401).send('Unauthorized');
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 };
 
-// Upload a car
+// POST /api/cars — upload a car
 router.post('/cars', authenticate, async (req, res) => {
   try {
-    const { model, type, price, pricehr, year, image } = req.body;
-    const car = new Car({ model, type, price, pricehr, year, image, userId: req.userId });
+    const {
+      make, model, year, licensePlate, state, trim, type, seats,
+      transmission, price, pricehr, description, rules, fuelPolicy,
+      dailyDistanceLimit, images, available,
+    } = req.body;
+
+    const car = new Car({
+      make, model, year, licensePlate, state, trim, type, seats,
+      transmission, price, pricehr, description, rules, fuelPolicy,
+      dailyDistanceLimit, images, available,
+      userId: req.userId,
+    });
+
     await car.save();
     res.status(201).json(car);
   } catch (error) {
-    res.status(500).send('Error uploading car');
+    console.error('Error uploading car:', error);
+    res.status(500).json({ message: 'Error uploading car' });
   }
 });
 
-// Get cars for the logged-in user
+// GET /api/user-cars — get cars for the logged-in user
 router.get('/user-cars', authenticate, async (req, res) => {
   try {
     const cars = await Car.find({ userId: req.userId });
-    res.json(cars);
+    res.json(cars || []);
   } catch (error) {
-    res.status(500).send('Error fetching cars');
+    console.error('Error fetching user cars:', error);
+    res.status(500).json({ message: 'Error fetching cars' });
   }
 });
 
-// Get all cars
+// GET /api/cars — get all cars with optional filters
 router.get('/cars', async (req, res) => {
   try {
-    const cars = await Car.find();
-    res.json(cars);
+    const { type, minPrice, maxPrice, search } = req.query;
+    const filter = {};
+
+    if (type) filter.type = type;
+    if (minPrice || maxPrice) {
+      filter.price = {};
+      if (minPrice) filter.price.$gte = Number(minPrice);
+      if (maxPrice) filter.price.$lte = Number(maxPrice);
+    }
+    if (search) {
+      const regex = new RegExp(search, 'i');
+      filter.$or = [
+        { make: regex },
+        { model: regex },
+        { description: regex },
+      ];
+    }
+
+    const cars = await Car.find(filter);
+    res.json(cars || []);
   } catch (error) {
-    res.status(500).send('Error fetching cars');
+    console.error('Error fetching cars:', error);
+    res.status(500).json({ message: 'Error fetching cars' });
   }
 });
 
-// Delete a car
+// GET /api/cars/:id — get a single car with owner details
+router.get('/cars/:id', async (req, res) => {
+  try {
+    const car = await Car.findById(req.params.id).populate(
+      'userId',
+      'firstName lastName username avgRating tripCount createdAt'
+    );
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    res.json(car);
+  } catch (error) {
+    console.error('Error fetching car:', error);
+    res.status(500).json({ message: 'Error fetching car' });
+  }
+});
+
+// DELETE /api/cars/:id — delete a car
 router.delete('/cars/:id', authenticate, async (req, res) => {
   try {
     const car = await Car.findOneAndDelete({ _id: req.params.id, userId: req.userId });
-    if (!car) {
-      return res.status(404).send('Car not found');
-    }
-    res.status(200).send('Car deleted');
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+    res.status(200).json({ message: 'Car deleted' });
   } catch (error) {
-    res.status(500).send('Error deleting car');
+    console.error('Error deleting car:', error);
+    res.status(500).json({ message: 'Error deleting car' });
   }
 });
 
-// Update car price
+// PUT /api/cars/:id — update car details
 router.put('/cars/:id', authenticate, async (req, res) => {
   try {
-    const { price, pricehr } = req.body;
+    const {
+      make, model, year, licensePlate, state, trim, type, seats,
+      transmission, price, pricehr, description, rules, fuelPolicy,
+      dailyDistanceLimit, images, available,
+    } = req.body;
+
     const car = await Car.findOneAndUpdate(
       { _id: req.params.id, userId: req.userId },
-      { price, pricehr },
+      {
+        make, model, year, licensePlate, state, trim, type, seats,
+        transmission, price, pricehr, description, rules, fuelPolicy,
+        dailyDistanceLimit, images, available,
+      },
       { new: true }
     );
-    if (!car) {
-      return res.status(404).send('Car not found');
-    }
+
+    if (!car) return res.status(404).json({ message: 'Car not found' });
     res.json(car);
   } catch (error) {
-    res.status(500).send('Error updating car');
+    console.error('Error updating car:', error);
+    res.status(500).json({ message: 'Error updating car' });
   }
 });
 

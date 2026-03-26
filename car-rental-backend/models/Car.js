@@ -1,13 +1,25 @@
 const mongoose = require('mongoose');
 
 const carSchema = new mongoose.Schema({
+  make: { type: String, required: true },
   model: { type: String, required: true },
-  type: { type: String, required: true },
-  price: { type: Number, required: true },
-  pricehr: { type: Number, required: true },
   year: { type: Number, required: true },
-  image: { type: String },
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
+  licensePlate: { type: String, required: true },
+  state: { type: String },
+  trim: { type: String },
+  type: { type: String, required: true }, // Electric, Hybrid, Gas
+  seats: { type: Number, default: 5 },
+  transmission: { type: String, default: 'Automatic' },
+  price: { type: Number, required: true },    // daily
+  pricehr: { type: Number, default: 0 },       // hourly
+  description: { type: String },
+  rules: [String],                             // ['No Smoking', 'Pet Friendly', ...]
+  fuelPolicy: { type: String, default: 'Full to Full' },
+  dailyDistanceLimit: { type: Number, default: 200 },
+  images: [String],
+  available: { type: Boolean, default: true },
+  userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  createdAt: { type: Date, default: Date.now }
 });
 
 module.exports = mongoose.model('Car', carSchema);

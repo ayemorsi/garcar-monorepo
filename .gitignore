@@ -12,3 +12,6 @@
 # Lockfiles (optional)
 **/package-lock.json
 **/yarn.lock
+
+# Next.js build output
+**/.next/

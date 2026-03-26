@@ -6,7 +6,15 @@ const cors = require('cors');
 const multer = require('multer');
 const bodyParser = require('body-parser');
 const User = require('./models/User'); // Ensure the correct path
-const carRoutes = require('./routes/car'); // Assuming you have car routes
+const Booking = require('./models/Booking');
+const carRoutes = require('./routes/car');
+const bookingRoutes = require('./routes/booking');
+const messageRoutes = require('./routes/message');
+const userRoutes = require('./routes/user');
+const reviewRoutes = require('./routes/review');
+const uploadRoutes = require('./routes/upload');
+const adminRoutes = require('./routes/admin');
+const notificationRoutes = require('./routes/notification');
 
 const app = express();
 const port = process.env.PORT || 5001;
@@ -73,7 +81,7 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
     if (user && await bcrypt.compare(password, user.password)) {
-      const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified }, secretKey, { expiresIn: '1h' });
+      const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
       res.json({ token });
     } else {
       res.status(401).send('Invalid username or password');
@@ -99,7 +107,7 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
       isVerified: true,
     });
     const user = await User.findById(req.params.userId);
-    const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified }, secretKey, { expiresIn: '1h' });
+    const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
     res.json({ token });
   } catch (error) {
     console.error('Error submitting verification data:', error);
@@ -120,6 +128,46 @@ app.get('/api/verification/:userId', authenticate, async (req, res) => {
 
 // Use other routes
 app.use('/api', carRoutes);
+app.use('/api', bookingRoutes);
+app.use('/api', messageRoutes);
+app.use('/api', userRoutes);
+app.use('/api', reviewRoutes);
+app.use('/api', uploadRoutes);
+app.use('/api', adminRoutes);
+app.use('/api', notificationRoutes);
+app.use('/uploads', express.static('uploads'));
+
+// GET /api/host/stats — summary stats for the logged-in host
+app.get('/api/host/stats', authenticate, async (req, res) => {
+  try {
+    const Car = require('./models/Car');
+    const ownerId = req.user.userId;
+    const [cars, bookings] = await Promise.all([
+      Car.find({ userId: ownerId }),
+      Booking.find({ ownerId }),
+    ]);
+    const completedBookings = bookings.filter(b => b.status === 'completed');
+    const pendingBookings = bookings.filter(b => b.status === 'pending');
+    const totalEarnings = completedBookings.reduce((sum, b) => sum + (b.totalPrice || 0), 0);
+    res.json({
+      totalCars: cars.length,
+      activeCars: cars.filter(c => c.available).length,
+      totalBookings: bookings.length,
+      pendingRequests: pendingBookings.length,
+      totalEarnings,
+      monthlyEarnings: completedBookings
+        .filter(b => {
+          const d = new Date(b.endDate);
+          const now = new Date();
+          return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        })
+        .reduce((sum, b) => sum + (b.totalPrice || 0), 0),
+    });
+  } catch (error) {
+    console.error('Error fetching host stats:', error);
+    res.status(500).json({ message: 'Error fetching host stats' });
+  }
+});
 
 // Start the server
 app.listen(port, () => {
