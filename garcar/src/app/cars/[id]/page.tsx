@@ -64,8 +64,21 @@ function PhotoGallery({ images }: { images: string[] }) {
       {/* Main cover photo */}
       <div className="col-span-2 row-span-2 bg-gray-200 flex items-center justify-center overflow-hidden">
         {images[0] ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={images[0]} alt="Cover" className="w-full h-full object-cover" />
+          <>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={images[0]}
+              alt="Cover"
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLImageElement).style.display = 'none';
+                (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+              }}
+            />
+            <div className="hidden w-full h-full flex items-center justify-center">
+              <Car className="w-20 h-20 text-gray-400" />
+            </div>
+          </>
         ) : (
           <Car className="w-20 h-20 text-gray-400" />
         )}
@@ -73,8 +86,21 @@ function PhotoGallery({ images }: { images: string[] }) {
       {slots.map((i) => (
         <div key={i} className="bg-gray-300 flex items-center justify-center relative overflow-hidden">
           {images[i + 1] ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={images[i + 1]} alt={`Photo ${i + 2}`} className="w-full h-full object-cover" />
+            <>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={images[i + 1]}
+                alt={`Photo ${i + 2}`}
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                  (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                }}
+              />
+              <div className="hidden w-full h-full flex items-center justify-center">
+                <Car className="w-10 h-10 text-gray-400" />
+              </div>
+            </>
           ) : (
             <Car className="w-10 h-10 text-gray-400" />
           )}
