@@ -56,10 +56,16 @@ function CarCard({ car }: { car: CarItem }) {
       <div className="relative">
         {car.images?.[0] ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={car.images[0]} alt={`${car.make} ${car.model}`} className="w-full h-48 object-cover" />
-        ) : (
+          <img
+            src={car.images[0]}
+            alt={`${car.make} ${car.model}`}
+            className="w-full h-48 object-cover"
+            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
+          />
+        ) : null}
+        <div className={car.images?.[0] ? 'hidden' : ''}>
           <CarImagePlaceholder />
-        )}
+        </div>
         {car.available && (
           <div className="absolute top-3 left-3">
             <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">

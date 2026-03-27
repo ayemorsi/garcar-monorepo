@@ -1,6 +1,5 @@
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
 const jwt = require('jsonwebtoken');
 
 const router = express.Router();
@@ -17,34 +16,22 @@ function authenticate(req, res, next) {
   });
 }
 
-const fs = require('fs');
-const UPLOAD_DIR = '/tmp/uploads';
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: UPLOAD_DIR,
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    cb(null, `${Date.now()}-${Math.random().toString(36).slice(2)}${ext}`);
-  },
-});
-
+// Memory storage — convert to base64 data URLs so images persist across serverless invocations
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     if (file.mimetype.startsWith('image/')) cb(null, true);
     else cb(new Error('Only image files are allowed'));
   },
 });
 
-// POST /api/upload — upload up to 10 images, returns array of URLs
+// POST /api/upload — returns base64 data URLs stored directly (no filesystem)
 router.post('/upload', authenticate, upload.array('images', 10), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ message: 'No files uploaded' });
   }
-  const baseUrl = process.env.BACKEND_URL || '';
-  const urls = req.files.map((f) => `${baseUrl}/uploads/${f.filename}`);
+  const urls = req.files.map((f) => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`);
   res.json({ urls });
 });
 
