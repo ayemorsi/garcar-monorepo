@@ -295,7 +295,7 @@ export default function AdminSettingsPage() {
                   </p>
                   {user.verificationData?.verificationDocument && (
                     <a
-                      href={`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'}/${user.verificationData.verificationDocument}`}
+                      href={user.verificationData.verificationDocument}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-1 mt-1 text-xs text-yellow-400 hover:text-yellow-300 underline"

@@ -8,7 +8,7 @@ const userSchema = new mongoose.Schema({
     state: String,
     city: String,
     apartment: String,
-    verificationDocument: String,
+    verificationDocument: { type: String, maxlength: 20000000 },
   },
   firstName: { type: String },
   lastName: { type: String },

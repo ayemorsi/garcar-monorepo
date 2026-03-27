@@ -72,11 +72,8 @@ app.use(async (req, res, next) => {
   }
 });
 
-// Multer setup for file uploads
-const fs = require('fs');
-const UPLOAD_DIR = '/tmp/uploads';
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-const upload = multer({ dest: UPLOAD_DIR });
+// Multer — memory storage so files survive serverless (stored in MongoDB as base64)
+const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 10 * 1024 * 1024 } });
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {
@@ -139,18 +136,16 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-// Route to handle user verification (document submission — sets pending review)
+// Route to handle user verification (document stored as base64 in MongoDB)
 app.post('/api/verify/:userId', authenticate, upload.single('verificationDocument'), async (req, res) => {
   try {
+    if (!req.file) return res.status(400).send('No document uploaded');
     const { state, city, apartment } = req.body;
-    const verificationDocument = req.file ? req.file.path : null;
-    if (!verificationDocument) {
-      return res.status(400).send('No document uploaded');
-    }
+    const documentData = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
     await User.findByIdAndUpdate(req.params.userId, {
-      verificationData: { state, city, apartment, verificationDocument },
+      verificationData: { state, city, apartment, verificationDocument: documentData },
       isVerified: false,
-      approved: false, // requires admin approval
+      approved: false,
     });
     res.json({ message: 'Document submitted. Pending admin review.' });
   } catch (error) {
