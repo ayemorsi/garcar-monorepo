@@ -26,6 +26,8 @@ const secretKey = process.env.JWT_SECRET || 'your_secret_key';
 // Middleware
 app.use(cors());
 app.use((req, res, next) => {
+  // Skip for multipart (file uploads) — multer handles those
+  if (req.headers['content-type']?.startsWith('multipart/')) return next();
   if (req.body !== undefined) return next();
   let raw = '';
   req.on('data', chunk => { raw += chunk; });
