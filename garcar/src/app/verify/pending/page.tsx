@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Car, Clock, CheckCircle, Mail } from 'lucide-react';
-import { getAuth } from '@/lib/auth';
+import { getAuth, clearAuth } from '@/lib/auth';
 
 const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
 
@@ -25,7 +25,8 @@ export default function VerificationPendingPage() {
         const data = await res.json();
         if (data.approved) {
           setApproved(true);
-          setTimeout(() => router.push('/browse'), 2000);
+          clearAuth(); // clear old token so they get a fresh one on login
+          setTimeout(() => router.push('/auth/login?approved=1'), 2000);
         }
       } catch {}
     }
