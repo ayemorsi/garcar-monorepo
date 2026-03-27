@@ -154,6 +154,17 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
   }
 });
 
+// Check approval status (used by pending page to poll)
+app.get('/api/auth/status', authenticate, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.userId).select('approved isVerified');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json({ approved: user.approved, isVerified: user.isVerified });
+  } catch (error) {
+    res.status(500).json({ message: 'Error checking status' });
+  }
+});
+
 // Route to fetch user verification data
 app.get('/api/verification/:userId', authenticate, async (req, res) => {
   try {
