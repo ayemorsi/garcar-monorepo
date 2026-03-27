@@ -143,6 +143,17 @@ export default function AdminSettingsPage() {
     }
   }
 
+  function openDocument(dataUrl: string) {
+    const [header, base64] = dataUrl.split(',');
+    const mime = header.match(/:(.*?);/)?.[1] || 'application/octet-stream';
+    const bytes = atob(base64);
+    const arr = new Uint8Array(bytes.length);
+    for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+    const blob = new Blob([arr], { type: mime });
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
+  }
+
   async function addBuilding(e: React.FormEvent) {
     e.preventDefault();
     if (!newBuilding.name || !newBuilding.address) return;
@@ -294,14 +305,12 @@ export default function AdminSettingsPage() {
                     Registered {new Date(user.createdAt).toLocaleDateString()}
                   </p>
                   {user.verificationData?.verificationDocument && (
-                    <a
-                      href={user.verificationData.verificationDocument}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={() => openDocument(user.verificationData!.verificationDocument!)}
                       className="inline-flex items-center gap-1 mt-1 text-xs text-yellow-400 hover:text-yellow-300 underline"
                     >
                       View Document
-                    </a>
+                    </button>
                   )}
                 </div>
                 <button
