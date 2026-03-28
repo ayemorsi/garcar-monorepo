@@ -145,22 +145,56 @@ function FilterSidebar({
         {/* Price Range */}
         <div className="mb-6">
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Price Range
+            Price Range / day
           </h3>
-          <div className="space-y-3">
-            <input
-              type="range"
-              min={20}
-              max={300}
-              value={priceRange[1]}
-              onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
-              className="w-full accent-blue-600"
-            />
-            <div className="flex items-center justify-between text-sm text-gray-700">
-              <span className="font-medium">${priceRange[0]}</span>
-              <span className="font-medium">${priceRange[1]}</span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 block">Min</label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={priceRange[1] - 1}
+                  value={priceRange[0]}
+                  onChange={(e) => {
+                    const val = Math.max(0, Math.min(parseInt(e.target.value) || 0, priceRange[1] - 1));
+                    setPriceRange([val, priceRange[1]]);
+                  }}
+                  className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+            <span className="text-gray-400 mt-5">–</span>
+            <div className="flex-1">
+              <label className="text-xs text-gray-400 mb-1 block">Max</label>
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
+                <input
+                  type="number"
+                  min={priceRange[0] + 1}
+                  max={1000}
+                  value={priceRange[1]}
+                  onChange={(e) => {
+                    const val = Math.max(priceRange[0] + 1, parseInt(e.target.value) || priceRange[0] + 1);
+                    setPriceRange([priceRange[0], val]);
+                  }}
+                  className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
             </div>
           </div>
+          <input
+            type="range"
+            min={0}
+            max={1000}
+            value={priceRange[1]}
+            onChange={(e) => {
+              const val = Math.max(priceRange[0] + 1, parseInt(e.target.value));
+              setPriceRange([priceRange[0], val]);
+            }}
+            className="w-full accent-blue-600 mt-3"
+          />
         </div>
 
         <button
@@ -186,7 +220,7 @@ function BrowsePageContent({
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [activeCategory, setActiveCategory] = useState('All Cars');
-  const [priceRange, setPriceRange] = useState<[number, number]>([20, 300]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
   const [sort, setSort] = useState('Recommended');
   const [cars, setCars] = useState<CarItem[]>([]);
   const [loading, setLoading] = useState(true);
