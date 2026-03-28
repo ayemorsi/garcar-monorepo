@@ -54,7 +54,10 @@ export default function ListPhotosPage() {
         prev.map((p) => {
           const idx = placeholders.findIndex((pl) => pl.id === p.id);
           if (idx === -1) return p;
-          return { ...p, backendUrl: `${BASE_URL}${urls[idx]}`, uploading: false };
+          // base64 data URLs are self-contained — don't prepend BASE_URL
+          const url = urls[idx];
+          const backendUrl = url.startsWith('data:') ? url : `${BASE_URL}${url}`;
+          return { ...p, backendUrl, uploading: false };
         })
       );
     } catch (err) {
