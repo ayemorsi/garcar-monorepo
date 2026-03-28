@@ -100,14 +100,14 @@ app.post('/api/register', async (req, res) => {
     if (!settings.registrationOpen) {
       return res.status(403).send('Registration is currently closed');
     }
-    const { username, password, building } = req.body;
+    const { username, password, building, firstName, lastName } = req.body;
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).send('Username already exists');
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const approved = !settings.requireApproval;
-    const user = new User({ username, password: hashedPassword, approved, building: building || '' });
+    const user = new User({ username, password: hashedPassword, approved, building: building || '', firstName: firstName || '', lastName: lastName || '' });
     await user.save();
     res.status(201).send('User registered successfully');
   } catch (error) {

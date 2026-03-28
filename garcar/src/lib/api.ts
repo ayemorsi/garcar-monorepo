@@ -52,7 +52,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 }
 
 export const api = {
-  register: (body: { username: string; password: string; building?: string }) =>
+  register: (body: { username: string; password: string; building?: string; firstName?: string; lastName?: string }) =>
     request('/register', { method: 'POST', body: JSON.stringify(body) }),
 
   /** Returns the raw token plus decoded userId and isVerified. */

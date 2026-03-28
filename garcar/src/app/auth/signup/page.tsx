@@ -52,7 +52,7 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       const username = form.email;
-      await api.register({ username, password: form.password, building: selectedBuilding?.name || '' });
+      await api.register({ username, password: form.password, building: selectedBuilding?.name || '', firstName: form.firstName, lastName: form.lastName });
       const data = await api.login({ username, password: form.password });
       saveAuth(data.token, data.userId);
       router.push(`/verify/residency?userId=${data.userId}&building=${encodeURIComponent(selectedBuilding?.name || '')}`);
