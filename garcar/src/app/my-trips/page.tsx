@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import {
   Car,
-  Clock,
   Calendar,
   ChevronRight,
   Headphones,
@@ -37,15 +36,6 @@ interface Booking {
   status: string;
 }
 
-function CarImagePlaceholder({ size = 'md' }: { size?: 'sm' | 'md' }) {
-  const sizeClasses = { sm: 'w-20 h-16', md: 'w-28 h-20' };
-  return (
-    <div className={`${sizeClasses[size]} bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0`}>
-      <Car className="w-8 h-8 text-gray-300" />
-    </div>
-  );
-}
-
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
@@ -60,10 +50,15 @@ function BookingRow({ booking, isPast }: { booking: Booking; isPast: boolean }) 
   const dates = `${formatDate(booking.startDate)} – ${formatDate(booking.endDate)}`;
 
   return (
-    <div className={`flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-shadow ${isPast ? 'opacity-80' : ''}`}>
-      <CarImagePlaceholder size="md" />
+    <div className={`flex flex-col sm:flex-row sm:items-center gap-3 p-4 bg-white border border-gray-200 rounded-xl hover:shadow-sm transition-shadow ${isPast ? 'opacity-80' : ''}`}>
+      {/* Car icon */}
+      <div className="hidden sm:flex w-24 h-16 bg-gray-100 rounded-lg items-center justify-center flex-shrink-0">
+        <Car className="w-8 h-8 text-gray-300" />
+      </div>
+
+      {/* Info */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2 mb-0.5">
+        <div className="flex items-center gap-2 mb-1">
           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
             booking.status === 'confirmed' ? 'text-green-700 bg-green-50' :
             booking.status === 'pending' ? 'text-yellow-700 bg-yellow-50' :
@@ -74,29 +69,29 @@ function BookingRow({ booking, isPast }: { booking: Booking; isPast: boolean }) 
           </span>
         </div>
         <h3 className="font-semibold text-gray-900 text-sm">{carName}</h3>
-        <div className="flex items-center gap-3 mt-0.5 text-xs text-gray-500">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-0.5 text-xs text-gray-500">
           <span className="flex items-center gap-1">
             <Calendar className="w-3 h-3" />
             {dates}
           </span>
           <span>{ownerName}</span>
+          <span className="font-semibold text-gray-800">Total: ${booking.totalPrice}</span>
         </div>
-        <p className="text-xs text-gray-500 mt-0.5">Total: <span className="font-semibold text-gray-800">${booking.totalPrice}</span></p>
       </div>
+
+      {/* Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {isPast ? (
-          <>
-            <Link
-              href={`/reviews/${booking._id}`}
-              className="border border-blue-300 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1"
-            >
-              <CheckCircle2 className="w-3 h-3" />
-              Leave Review
-            </Link>
-          </>
+          <Link
+            href={`/reviews/${booking._id}`}
+            className="border border-blue-300 text-blue-600 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-blue-50 transition-colors flex items-center gap-1"
+          >
+            <CheckCircle2 className="w-3 h-3" />
+            Leave Review
+          </Link>
         ) : (
           <Link
-            href={`/messages`}
+            href="/messages"
             className="border border-gray-300 text-gray-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-1"
           >
             <MessageCircle className="w-3 h-3" />
@@ -135,11 +130,9 @@ export default function MyTripsPage() {
   return (
     <AppLayout>
       {/* Page header */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-8 pb-4">
-        <h1 className="text-2xl font-bold text-gray-900">My Trips</h1>
-        <p className="text-sm text-gray-500 mt-1">
-          Manage your neighborly rentals within the complex.
-        </p>
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">My Trips</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage your neighborly rentals within the complex.</p>
 
         {/* Tabs */}
         <div className="flex items-center gap-1 mt-5 border-b border-gray-200">
@@ -192,7 +185,7 @@ export default function MyTripsPage() {
             <p className="text-gray-500 font-medium">
               {activeTab === 'upcoming' ? 'No upcoming trips' : 'No past trips yet'}
             </p>
-            <p className="text-sm mt-1">
+            <p className="text-sm mt-1 text-center">
               {activeTab === 'upcoming' ? 'Book a car to get started.' : 'Your completed rentals will appear here.'}
             </p>
             <Link
@@ -208,19 +201,17 @@ export default function MyTripsPage() {
 
       {/* Support banner */}
       <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mb-10">
-        <div className="bg-blue-600 rounded-xl px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="bg-blue-600 rounded-xl px-5 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
               <Headphones className="w-5 h-5 text-white" />
             </div>
             <div>
               <p className="font-semibold text-white text-sm">Need help with a trip?</p>
-              <p className="text-blue-100 text-xs mt-0.5">
-                Our support team is available 24/7 for any issues during your rental.
-              </p>
+              <p className="text-blue-100 text-xs mt-0.5">Our support team is available 24/7 for any issues during your rental.</p>
             </div>
           </div>
-          <button className="bg-white text-blue-600 font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap flex-shrink-0">
+          <button className="bg-white text-blue-600 font-semibold text-sm px-5 py-2.5 rounded-lg hover:bg-blue-50 transition-colors whitespace-nowrap flex-shrink-0 w-full sm:w-auto">
             Contact Support
           </button>
         </div>

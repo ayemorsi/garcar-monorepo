@@ -103,14 +103,14 @@ export default function ListVehicleInfoPage() {
     <AppLayout>
       {/* Progress Bar */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-0">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 sm:py-4">
+          <div className="flex items-center justify-between mb-2 sm:mb-3">
+            <div className="flex items-center gap-0 overflow-x-auto">
               {STEPS.map((s, idx) => (
-                <div key={s.step} className="flex items-center">
-                  <div className="flex items-center gap-2">
+                <div key={s.step} className="flex items-center flex-shrink-0">
+                  <div className="flex items-center gap-1.5 sm:gap-2">
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
+                      className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-xs font-semibold ${
                         s.step === 1
                           ? 'bg-blue-600 text-white'
                           : 'bg-gray-200 text-gray-500'
@@ -119,7 +119,7 @@ export default function ListVehicleInfoPage() {
                       {s.step}
                     </div>
                     <span
-                      className={`text-sm font-medium ${
+                      className={`text-xs sm:text-sm font-medium hidden sm:inline ${
                         s.step === 1 ? 'text-blue-600' : 'text-gray-400'
                       }`}
                     >
@@ -127,22 +127,22 @@ export default function ListVehicleInfoPage() {
                     </span>
                   </div>
                   {idx < STEPS.length - 1 && (
-                    <div className="w-12 h-px bg-gray-300 mx-3" />
+                    <div className="w-6 sm:w-12 h-px bg-gray-300 mx-1.5 sm:mx-3" />
                   )}
                 </div>
               ))}
             </div>
-            <span className="text-sm font-medium text-gray-500">25% Complete</span>
+            <span className="text-xs sm:text-sm font-medium text-gray-500 flex-shrink-0 ml-2">25%</span>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '25%' }} />
+          <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
+            <div className="bg-blue-600 h-full rounded-full" style={{ width: '25%' }} />
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <div className="flex gap-8">
+      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
           {/* Main Card */}
           <div className="flex-1">
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
@@ -352,7 +352,7 @@ export default function ListVehicleInfoPage() {
           </div>
 
           {/* Sidebar */}
-          <div className="w-72 flex-shrink-0 space-y-4">
+          <div className="w-full lg:w-72 lg:flex-shrink-0 space-y-4">
             {/* Why we need this */}
             <div className="bg-blue-600 rounded-2xl p-6 text-white">
               <h3 className="font-semibold text-base mb-4">Why we need this</h3>

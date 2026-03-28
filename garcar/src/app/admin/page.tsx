@@ -3,8 +3,8 @@
 import { useState, useEffect } from 'react';
 import {
   Users, Car, CalendarCheck, DollarSign,
-  UserX, ShieldCheck, TrendingUp, Activity,
-  UserPlus, PlusSquare, Clock,
+  UserX, ShieldCheck, Clock,
+  Activity, UserPlus, PlusSquare, TrendingUp,
 } from 'lucide-react';
 import { api } from '@/lib/api';
 
@@ -49,13 +49,13 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-      <div className="flex items-start justify-between mb-3">
+    <div className="bg-gray-900 border border-gray-800 rounded-xl p-4 sm:p-5">
+      <div className="flex items-start justify-between mb-2 sm:mb-3">
         <div>
           <p className="text-xs text-gray-500 uppercase font-medium mb-1">{label}</p>
-          <p className="text-2xl font-bold text-white">{value}</p>
+          <p className="text-xl sm:text-2xl font-bold text-white">{value}</p>
         </div>
-        <div className={`w-9 h-9 rounded-lg flex items-center justify-center ${color}`}>
+        <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center ${color}`}>
           <Icon className="w-4 h-4" />
         </div>
       </div>
@@ -80,14 +80,14 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
+    <div className="p-4 sm:p-8">
+      <div className="mb-6 sm:mb-8">
+        <h1 className="text-xl sm:text-2xl font-bold text-white">Dashboard</h1>
         <p className="text-gray-400 text-sm mt-1">Platform overview across all buildings</p>
       </div>
 
-      {/* Stat Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      {/* Primary stat grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
         <StatCard icon={Users} label="Total Users" value={loading ? '—' : stats?.totalUsers ?? 0}
           sub={`${stats?.newUsersThisMonth ?? 0} new this month`} color="bg-blue-900/50 text-blue-400" />
         <StatCard icon={Car} label="Listings" value={loading ? '—' : stats?.totalListings ?? 0}
@@ -98,7 +98,8 @@ export default function AdminDashboard() {
           sub="Completed bookings" color="bg-yellow-900/50 text-yellow-400" />
       </div>
 
-      <div className="grid grid-cols-3 gap-4 mb-8">
+      {/* Secondary stat grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
         <StatCard icon={ShieldCheck} label="Active Users" value={loading ? '—' : stats?.activeUsers ?? 0}
           color="bg-green-900/50 text-green-400" />
         <StatCard icon={UserX} label="Paused Accounts" value={loading ? '—' : stats?.pausedUsers ?? 0}
@@ -107,14 +108,15 @@ export default function AdminDashboard() {
           sub="Awaiting review" color="bg-amber-900/50 text-amber-400" />
       </div>
 
-      <div className="grid grid-cols-3 gap-6">
+      {/* Activity + Buildings */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Activity Feed */}
-        <div className="col-span-2 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-800">
+        <div className="lg:col-span-2 bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-4 border-b border-gray-800">
             <Activity className="w-4 h-4 text-blue-400" />
             <h2 className="text-sm font-semibold text-white">Recent Activity</h2>
           </div>
-          <div className="divide-y divide-gray-800 max-h-96 overflow-y-auto">
+          <div className="divide-y divide-gray-800 max-h-80 sm:max-h-96 overflow-y-auto">
             {loading ? (
               <div className="px-5 py-8 text-center text-sm text-gray-500">Loading...</div>
             ) : activity.length === 0 ? (
@@ -122,7 +124,7 @@ export default function AdminDashboard() {
             ) : activity.map((event, i) => {
               const Icon = TYPE_ICON[event.type] ?? Activity;
               return (
-                <div key={i} className="flex items-start gap-3 px-5 py-3.5">
+                <div key={i} className="flex items-start gap-3 px-4 sm:px-5 py-3.5">
                   <div className={`w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5 ${TYPE_STYLES[event.type] ?? 'bg-gray-800 text-gray-400'}`}>
                     <Icon className="w-3.5 h-3.5" />
                   </div>
@@ -140,7 +142,7 @@ export default function AdminDashboard() {
 
         {/* Buildings */}
         <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-800">
+          <div className="flex items-center gap-2 px-4 sm:px-5 py-4 border-b border-gray-800">
             <TrendingUp className="w-4 h-4 text-blue-400" />
             <h2 className="text-sm font-semibold text-white">Buildings</h2>
           </div>

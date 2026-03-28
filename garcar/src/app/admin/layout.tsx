@@ -12,6 +12,8 @@ import {
   ShieldAlert,
   Activity,
   Settings,
+  Menu,
+  X,
 } from 'lucide-react';
 
 const NAV = [
@@ -27,6 +29,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const router = useRouter();
   const [checked, setChecked] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -40,6 +43,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     setChecked(true);
   }, [router]);
 
+  // Close sidebar on navigation
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
+
   function logout() {
     localStorage.removeItem('token');
     document.cookie = 'token=; Max-Age=0; path=/';
@@ -48,51 +56,96 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   if (!checked) return null;
 
-  return (
-    <div className="min-h-screen flex bg-gray-950">
-      {/* Sidebar */}
-      <aside className="w-60 flex-shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col">
-        <div className="px-5 py-5 border-b border-gray-800">
+  const SidebarContent = () => (
+    <>
+      <div className="px-5 py-5 border-b border-gray-800 flex items-center justify-between">
+        <div>
           <div className="flex items-center gap-2">
             <ShieldAlert className="w-5 h-5 text-blue-400" />
             <span className="font-bold text-white text-base">GarKar Admin</span>
           </div>
           <p className="text-xs text-gray-500 mt-0.5">Building Management</p>
         </div>
+        <button
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden text-gray-400 hover:text-white p-1"
+        >
+          <X className="w-5 h-5" />
+        </button>
+      </div>
 
-        <nav className="flex-1 px-3 py-4 space-y-0.5">
-          {NAV.map(({ href, label, icon: Icon, exact }) => {
-            const active = exact ? pathname === href : pathname.startsWith(href);
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-blue-600 text-white'
-                    : 'text-gray-400 hover:text-white hover:bg-gray-800'
-                }`}
-              >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                {label}
-              </Link>
-            );
-          })}
-        </nav>
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
+        {NAV.map(({ href, label, icon: Icon, exact }) => {
+          const active = exact ? pathname === href : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                active
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-800'
+              }`}
+            >
+              <Icon className="w-4 h-4 flex-shrink-0" />
+              {label}
+            </Link>
+          );
+        })}
+      </nav>
 
-        <div className="px-3 py-4 border-t border-gray-800">
-          <button
-            onClick={logout}
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors w-full"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
-        </div>
+      <div className="px-3 py-4 border-t border-gray-800">
+        <button
+          onClick={logout}
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-400 hover:text-white hover:bg-gray-800 transition-colors w-full"
+        >
+          <LogOut className="w-4 h-4" />
+          Sign Out
+        </button>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen flex bg-gray-950">
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/60 z-40 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — desktop always visible, mobile slide-in */}
+      <aside className={`
+        fixed top-0 left-0 h-full z-50 w-60 bg-gray-900 border-r border-gray-800 flex flex-col
+        transition-transform duration-200
+        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:translate-x-0 lg:static lg:flex-shrink-0
+      `}>
+        <SidebarContent />
       </aside>
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-h-screen bg-gray-950 overflow-auto">
+        {/* Mobile top bar */}
+        <div className="lg:hidden flex items-center gap-3 px-4 py-3 bg-gray-900 border-b border-gray-800">
+          <button
+            onClick={() => setSidebarOpen(true)}
+            className="text-gray-400 hover:text-white p-1"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <ShieldAlert className="w-4 h-4 text-blue-400" />
+            <span className="font-bold text-white text-sm">GarKar Admin</span>
+          </div>
+          {/* Active page label */}
+          <span className="text-gray-400 text-sm ml-auto">
+            {NAV.find(({ href, exact }) => exact ? pathname === href : pathname.startsWith(href))?.label}
+          </span>
+        </div>
+
         {children}
       </div>
     </div>

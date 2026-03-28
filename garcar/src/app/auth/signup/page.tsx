@@ -66,7 +66,7 @@ export default function SignUpPage() {
   return (
     <div className="min-h-screen flex">
       {/* Left — form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-8 py-12 max-w-xl mx-auto lg:mx-0">
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-8 py-8 sm:py-12 max-w-xl mx-auto lg:mx-0">
         <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600 mb-8">
           <Car className="w-6 h-6" />
           GarKar
@@ -92,7 +92,7 @@ export default function SignUpPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
               <input

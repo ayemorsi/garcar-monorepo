@@ -52,7 +52,7 @@ function Toggle({
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 ${
+      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-gray-900 flex-shrink-0 ${
         checked ? 'bg-blue-600' : 'bg-gray-600'
       } ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
     >
@@ -199,22 +199,22 @@ export default function AdminSettingsPage() {
   }
 
   return (
-    <div className="p-6 space-y-8 max-w-3xl">
+    <div className="p-4 sm:p-6 space-y-6 sm:space-y-8 max-w-3xl w-full">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <Settings className="w-6 h-6 text-blue-400" />
+          <Settings className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400 flex-shrink-0" />
           <div>
-            <h1 className="text-xl font-bold text-white">App Settings</h1>
-            <p className="text-sm text-gray-400">Manage registration and user access</p>
+            <h1 className="text-lg sm:text-xl font-bold text-white">App Settings</h1>
+            <p className="text-xs sm:text-sm text-gray-400">Manage registration and user access</p>
           </div>
         </div>
         <button
           onClick={fetchAll}
-          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+          className="flex items-center gap-2 px-3 py-1.5 text-sm text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors flex-shrink-0"
         >
           <RefreshCw className="w-4 h-4" />
-          Refresh
+          <span className="hidden sm:inline">Refresh</span>
         </button>
       </div>
 
@@ -226,19 +226,16 @@ export default function AdminSettingsPage() {
 
       {/* Registration Controls */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl divide-y divide-gray-800">
-        <div className="px-6 py-4">
+        <div className="px-4 sm:px-6 py-4">
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Registration Controls</h2>
         </div>
 
-        {/* Registration Open */}
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div>
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-white">Registration Open</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              When OFF, new users cannot create accounts
-            </p>
+            <p className="text-xs text-gray-400 mt-0.5">When OFF, new users cannot create accounts</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {savingKey === 'registrationOpen' && (
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             )}
@@ -250,15 +247,12 @@ export default function AdminSettingsPage() {
           </div>
         </div>
 
-        {/* Require Approval */}
-        <div className="px-6 py-4 flex items-center justify-between">
-          <div>
+        <div className="px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-white">Require Approval</p>
-            <p className="text-xs text-gray-400 mt-0.5">
-              When ON, new accounts need admin approval before they can log in
-            </p>
+            <p className="text-xs text-gray-400 mt-0.5">When ON, new accounts need admin approval before logging in</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-shrink-0">
             {savingKey === 'requireApproval' && (
               <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
             )}
@@ -273,11 +267,9 @@ export default function AdminSettingsPage() {
 
       {/* Pending Approvals */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-2">
-          <UserCheck className="w-4 h-4 text-yellow-400" />
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-            Pending Approvals
-          </h2>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-800 flex items-center gap-2">
+          <UserCheck className="w-4 h-4 text-yellow-400 flex-shrink-0" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Pending Approvals</h2>
           {pendingUsers.length > 0 && (
             <span className="ml-auto bg-yellow-500/20 text-yellow-400 text-xs font-semibold px-2 py-0.5 rounded-full">
               {pendingUsers.length}
@@ -286,13 +278,11 @@ export default function AdminSettingsPage() {
         </div>
 
         {pendingUsers.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-500">
-            No pending approvals
-          </div>
+          <div className="px-6 py-8 text-center text-sm text-gray-500">No pending approvals</div>
         ) : (
           <ul className="divide-y divide-gray-800">
             {pendingUsers.map((user) => (
-              <li key={user._id} className="px-6 py-4 flex items-center justify-between gap-4">
+              <li key={user._id} className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white">{user.username}</p>
                   {(user.firstName || user.lastName) && (
@@ -316,7 +306,7 @@ export default function AdminSettingsPage() {
                 <button
                   onClick={() => approveUser(user._id)}
                   disabled={approvingId === user._id}
-                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+                  className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white rounded-lg transition-colors self-start sm:self-auto"
                 >
                   {approvingId === user._id ? (
                     <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -333,32 +323,32 @@ export default function AdminSettingsPage() {
 
       {/* Buildings */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-2">
-          <Building2 className="w-4 h-4 text-blue-400" />
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-800 flex items-center gap-2">
+          <Building2 className="w-4 h-4 text-blue-400 flex-shrink-0" />
           <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Apartment Buildings</h2>
           <span className="ml-auto text-xs text-gray-500">{buildings.filter(b => b.active).length} active</span>
         </div>
 
         {/* Add building form */}
-        <form onSubmit={addBuilding} className="px-6 py-4 border-b border-gray-800 flex gap-3 flex-wrap">
+        <form onSubmit={addBuilding} className="px-4 sm:px-6 py-4 border-b border-gray-800 flex flex-col sm:flex-row gap-3">
           <input
             type="text"
             placeholder="Building name"
             value={newBuilding.name}
             onChange={(e) => setNewBuilding((n) => ({ ...n, name: e.target.value }))}
-            className="flex-1 min-w-40 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <input
             type="text"
             placeholder="Address"
             value={newBuilding.address}
             onChange={(e) => setNewBuilding((n) => ({ ...n, address: e.target.value }))}
-            className="flex-1 min-w-48 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 bg-gray-800 border border-gray-700 text-white text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
           <button
             type="submit"
             disabled={addingBuilding || !newBuilding.name || !newBuilding.address}
-            className="flex items-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-semibold bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded-lg transition-colors"
           >
             <Plus className="w-4 h-4" />
             Add
@@ -370,7 +360,7 @@ export default function AdminSettingsPage() {
         ) : (
           <ul className="divide-y divide-gray-800">
             {buildings.map((b) => (
-              <li key={b._id} className="px-6 py-4 flex items-center gap-4">
+              <li key={b._id} className="px-4 sm:px-6 py-4 flex items-center gap-3 sm:gap-4">
                 <div className="flex-1 min-w-0">
                   <p className={`text-sm font-medium truncate ${b.active ? 'text-white' : 'text-gray-500 line-through'}`}>{b.name}</p>
                   <p className="text-xs text-gray-500 truncate">{b.address}</p>
@@ -379,7 +369,7 @@ export default function AdminSettingsPage() {
                 <button
                   onClick={() => deleteBuilding(b._id)}
                   disabled={deletingBuildingId === b._id}
-                  className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50"
+                  className="p-1.5 text-gray-500 hover:text-red-400 hover:bg-red-900/20 rounded-lg transition-colors disabled:opacity-50 flex-shrink-0"
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -391,12 +381,10 @@ export default function AdminSettingsPage() {
 
       {/* Currently Online */}
       <div className="bg-gray-900 border border-gray-800 rounded-xl">
-        <div className="px-6 py-4 border-b border-gray-800 flex items-center gap-2">
-          <Wifi className="w-4 h-4 text-green-400" />
-          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">
-            Currently Online
-          </h2>
-          <span className="text-xs text-gray-500">(active in last 5 min)</span>
+        <div className="px-4 sm:px-6 py-4 border-b border-gray-800 flex items-center gap-2 flex-wrap">
+          <Wifi className="w-4 h-4 text-green-400 flex-shrink-0" />
+          <h2 className="text-sm font-semibold text-gray-300 uppercase tracking-wider">Currently Online</h2>
+          <span className="text-xs text-gray-500">(last 5 min)</span>
           {onlineUsers.length > 0 && (
             <span className="ml-auto bg-green-500/20 text-green-400 text-xs font-semibold px-2 py-0.5 rounded-full">
               {onlineUsers.length}
@@ -405,13 +393,11 @@ export default function AdminSettingsPage() {
         </div>
 
         {onlineUsers.length === 0 ? (
-          <div className="px-6 py-8 text-center text-sm text-gray-500">
-            No users currently online
-          </div>
+          <div className="px-6 py-8 text-center text-sm text-gray-500">No users currently online</div>
         ) : (
           <ul className="divide-y divide-gray-800">
             {onlineUsers.map((user) => (
-              <li key={user._id} className="px-6 py-4 flex items-center gap-3">
+              <li key={user._id} className="px-4 sm:px-6 py-4 flex items-center gap-3">
                 <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-white truncate">{user.username}</p>
