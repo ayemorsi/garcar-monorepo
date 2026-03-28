@@ -60,7 +60,7 @@ interface CarDetail {
 function PhotoGallery({ images }: { images: string[] }) {
   const slots = [0, 1, 2, 3];
   return (
-    <div className="relative rounded-xl overflow-hidden grid grid-cols-4 grid-rows-2 gap-2 h-80">
+    <div className="relative rounded-xl overflow-hidden grid grid-cols-4 grid-rows-2 gap-1 sm:gap-2 h-56 sm:h-80">
       {/* Main cover photo */}
       <div className="col-span-2 row-span-2 bg-gray-200 flex items-center justify-center overflow-hidden">
         {images[0] ? (
@@ -320,13 +320,13 @@ export default function CarDetailPage({
       </div>
 
       {/* Photo gallery */}
-      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mb-8">
+      <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 mb-4 sm:mb-8">
         <PhotoGallery images={car.images ?? []} />
       </div>
 
       {/* Content */}
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-16">
-        <div className="flex gap-10">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
           {/* Left column */}
           <div className="flex-1 min-w-0">
             {/* Title + actions */}
@@ -439,7 +439,7 @@ export default function CarDetailPage({
           </div>
 
           {/* Right sticky sidebar */}
-          <div className="w-80 flex-shrink-0">
+          <div className="w-full lg:w-80 lg:flex-shrink-0">
             <BookingWidget car={car} />
           </div>
         </div>

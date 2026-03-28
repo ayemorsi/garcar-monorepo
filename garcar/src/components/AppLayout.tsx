@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import {
   Car, ChevronDown, User, Settings, LogOut,
-  LayoutDashboard, CalendarDays, MessageSquare, PlusCircle
+  LayoutDashboard, CalendarDays, MessageSquare, PlusCircle, Menu, X
 } from 'lucide-react';
 import { clearAuth, getAuth } from '@/lib/auth';
 import NotificationBell from '@/components/NotificationBell';
@@ -19,10 +19,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { userId } = getAuth();
 
-  // Close dropdown on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
@@ -32,6 +32,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Close mobile menu on route change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
 
   function handleLogout() {
     clearAuth();
@@ -43,15 +48,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Top navbar */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
+          <div className="flex items-center justify-between h-14 sm:h-16">
             {/* Logo */}
             <Link href="/browse" className="flex items-center gap-2 font-bold text-xl text-blue-600 shrink-0">
               <Car className="w-6 h-6" />
               GarKar
             </Link>
 
-            {/* Center nav */}
-            <div className="flex items-center gap-1">
+            {/* Center nav — desktop only */}
+            <div className="hidden md:flex items-center gap-1">
               {NAV_LINKS.map(({ href, label }) => {
                 const active = pathname === href || pathname.startsWith(href + '/');
                 return (
@@ -71,10 +76,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </div>
 
             {/* Right side */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               <Link
                 href="/messages"
-                className={`p-2 rounded-full transition-colors ${
+                className={`hidden sm:flex p-2 rounded-full transition-colors ${
                   pathname.startsWith('/messages')
                     ? 'bg-blue-50 text-blue-600'
                     : 'text-gray-500 hover:bg-gray-100 hover:text-gray-700'
@@ -85,8 +90,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
               <NotificationBell />
 
-              {/* Avatar dropdown */}
-              <div className="relative" ref={dropdownRef}>
+              {/* Avatar dropdown — desktop */}
+              <div className="relative hidden sm:block" ref={dropdownRef}>
                 <button
                   onClick={() => setDropdownOpen((o) => !o)}
                   className="flex items-center gap-1.5 pl-1 pr-2 py-1 rounded-full hover:bg-gray-100 transition-colors"
@@ -103,18 +108,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       <p className="text-sm font-semibold text-gray-900">My Account</p>
                       <p className="text-xs text-gray-500 truncate">ID: {userId?.slice(-8)}</p>
                     </div>
-
                     <div className="py-1">
                       <DropdownItem href="/dashboard" icon={LayoutDashboard} label="Dashboard" onClick={() => setDropdownOpen(false)} />
                       <DropdownItem href="/my-bookings" icon={CalendarDays} label="My Bookings" onClick={() => setDropdownOpen(false)} />
                       <DropdownItem href="/messages" icon={MessageSquare} label="Messages" onClick={() => setDropdownOpen(false)} />
                     </div>
-
                     <div className="border-t border-gray-100 py-1">
                       <DropdownItem href="/host/dashboard" icon={PlusCircle} label="Host Dashboard" onClick={() => setDropdownOpen(false)} />
                       <DropdownItem href="/host/list" icon={Car} label="List My Car" onClick={() => setDropdownOpen(false)} />
                     </div>
-
                     <div className="border-t border-gray-100 py-1">
                       <DropdownItem href="/settings" icon={Settings} label="Settings" onClick={() => setDropdownOpen(false)} />
                       <button
@@ -128,20 +130,76 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
               </div>
+
+              {/* Hamburger — mobile only */}
+              <button
+                onClick={() => setMobileMenuOpen((o) => !o)}
+                className="sm:hidden p-2 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors"
+              >
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Mobile slide-down menu */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden border-t border-gray-200 bg-white px-4 py-3 space-y-1">
+            {NAV_LINKS.map(({ href, label }) => {
+              const active = pathname === href || pathname.startsWith(href + '/');
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`block px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                    active ? 'bg-blue-50 text-blue-600' : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {label}
+                </Link>
+              );
+            })}
+            <div className="border-t border-gray-100 pt-2 mt-2">
+              <Link href="/dashboard" className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Dashboard
+              </Link>
+              <Link href="/host/list" className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                List My Car
+              </Link>
+              <Link href="/messages" className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Messages
+              </Link>
+              <Link href="/settings" className="block px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50">
+                Settings
+              </Link>
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        )}
       </nav>
 
       {/* Page content */}
-      <main className="flex-1">
+      <main className="flex-1 pb-16 sm:pb-0">
         {children}
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-gray-200 mt-auto">
+      {/* Mobile bottom nav */}
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 flex items-center justify-around px-2 py-2">
+        <MobileNavItem href="/browse" icon={Car} label="Browse" pathname={pathname} />
+        <MobileNavItem href="/my-bookings" icon={CalendarDays} label="Bookings" pathname={pathname} />
+        <MobileNavItem href="/messages" icon={MessageSquare} label="Messages" pathname={pathname} />
+        <MobileNavItem href="/dashboard" icon={User} label="Profile" pathname={pathname} />
+      </div>
+
+      {/* Footer — desktop */}
+      <footer className="hidden sm:block bg-white border-t border-gray-200 mt-auto">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <div className="grid grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
             <div>
               <div className="flex items-center gap-2 font-bold text-lg text-blue-600 mb-3">
                 <Car className="w-5 h-5" />
@@ -180,6 +238,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </div>
       </footer>
     </div>
+  );
+}
+
+function MobileNavItem({
+  href, icon: Icon, label, pathname,
+}: {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  pathname: string;
+}) {
+  const active = pathname === href || pathname.startsWith(href + '/');
+  return (
+    <Link
+      href={href}
+      className={`flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-colors ${
+        active ? 'text-blue-600' : 'text-gray-500'
+      }`}
+    >
+      <Icon className="w-5 h-5" />
+      <span className="text-xs font-medium">{label}</span>
+    </Link>
   );
 }
 

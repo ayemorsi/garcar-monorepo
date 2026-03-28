@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Car, CalendarDays, MessageSquare, PlusCircle, Star, TrendingUp, Clock, MapPin } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
-import { getAuth } from '@/lib/auth';
 
 const QUICK_ACTIONS = [
   { href: '/browse', icon: Car, label: 'Browse Cars', desc: 'Find a car in your building', color: 'bg-blue-50 text-blue-600' },
@@ -38,7 +37,6 @@ function formatDate(dateStr: string) {
 }
 
 export default function DashboardPage() {
-  const { userId } = getAuth();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -64,17 +62,17 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="max-w-7xl mx-auto px-6 py-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
         {/* Welcome */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Welcome back, {displayName} 👋</h1>
-          <p className="text-gray-500 mt-1">Here&apos;s what&apos;s happening in your community today.</p>
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back, {displayName} 👋</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Here&apos;s what&apos;s happening in your community today.</p>
         </div>
 
         {/* Stats row */}
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Upcoming Trips</p>
               <CalendarDays className="w-5 h-5 text-blue-500" />
             </div>
@@ -83,8 +81,8 @@ export default function DashboardPage() {
               {nextBooking ? `Next: ${formatDate(nextBooking.startDate)}` : 'No upcoming trips'}
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Trust Score</p>
               <Star className="w-5 h-5 text-yellow-500" />
             </div>
@@ -95,8 +93,8 @@ export default function DashboardPage() {
               {loading ? '' : `${profile?.tripCount ?? 0} trips completed`}
             </p>
           </div>
-          <div className="bg-white rounded-2xl border border-gray-200 p-5">
-            <div className="flex items-center justify-between mb-3">
+          <div className="bg-white rounded-2xl border border-gray-200 p-4 sm:p-5">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-gray-400">Total Bookings</p>
               <TrendingUp className="w-5 h-5 text-green-500" />
             </div>
@@ -105,25 +103,25 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left — main content */}
-          <div className="col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6">
             {/* Quick actions */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
               <div className="grid grid-cols-2 gap-3">
                 {QUICK_ACTIONS.map(({ href, icon: Icon, label, desc, color }) => (
                   <Link
                     key={href}
                     href={href}
-                    className="flex items-center gap-4 p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all group"
+                    className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-gray-100 hover:border-blue-200 hover:shadow-sm transition-all group"
                   >
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${color}`}>
-                      <Icon className="w-5 h-5" />
+                    <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${color}`}>
+                      <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
                     </div>
-                    <div>
-                      <p className="text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">{label}</p>
-                      <p className="text-xs text-gray-500">{desc}</p>
+                    <div className="min-w-0">
+                      <p className="text-xs sm:text-sm font-semibold text-gray-900 group-hover:text-blue-600 transition-colors truncate">{label}</p>
+                      <p className="text-xs text-gray-500 hidden sm:block">{desc}</p>
                     </div>
                   </Link>
                 ))}
@@ -131,7 +129,7 @@ export default function DashboardPage() {
             </div>
 
             {/* Upcoming trips */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+            <div className="bg-white rounded-2xl border border-gray-200 p-5 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold text-gray-900">Upcoming Trips</h2>
                 <Link href="/my-trips" className="text-sm text-blue-600 hover:underline font-medium">View all</Link>
@@ -161,15 +159,15 @@ export default function DashboardPage() {
                       ? `${booking.ownerId.firstName} ${booking.ownerId.lastName ?? ''}`.trim()
                       : booking.ownerId?.username ?? 'Owner';
                     return (
-                      <div key={booking._id} className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors">
-                        <div className="w-12 h-12 bg-gray-200 rounded-xl flex items-center justify-center shrink-0">
-                          <Car className="w-6 h-6 text-gray-400" />
+                      <div key={booking._id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl bg-gray-50 hover:bg-blue-50 transition-colors">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-200 rounded-xl flex items-center justify-center shrink-0">
+                          <Car className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-gray-900 text-sm">{carName}</p>
+                          <p className="font-semibold text-gray-900 text-sm truncate">{carName}</p>
                           <p className="text-xs text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3" />
-                            {formatDate(booking.startDate)} – {formatDate(booking.endDate)} · {ownerName}
+                            <Clock className="w-3 h-3 shrink-0" />
+                            <span className="truncate">{formatDate(booking.startDate)} – {formatDate(booking.endDate)}</span>
                           </p>
                         </div>
                         <div className="text-right shrink-0">

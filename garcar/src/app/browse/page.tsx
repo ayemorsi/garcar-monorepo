@@ -191,6 +191,7 @@ function BrowsePageContent({
   const [cars, setCars] = useState<CarItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   async function fetchCars() {
     try {
@@ -229,55 +230,82 @@ function BrowsePageContent({
       {/* Search bar */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by car make or model"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && fetchCars()}
-                className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
+          <div className="flex flex-col gap-2 sm:gap-3">
+            <div className="flex items-stretch gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search by make or model"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchCars()}
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+              </div>
+              <button
+                onClick={fetchCars}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 sm:px-6 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap"
+              >
+                Search
+              </button>
             </div>
-            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2.5 bg-white">
-              <Calendar className="w-4 h-4 text-gray-400" />
+            <div className="flex items-center gap-2 border border-gray-300 rounded-lg px-3 py-2 bg-white">
+              <Calendar className="w-4 h-4 text-gray-400 shrink-0" />
               <input
                 type="date"
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className="text-sm text-gray-700 focus:outline-none border-none"
+                className="text-sm text-gray-700 focus:outline-none border-none flex-1 min-w-0"
               />
               <span className="text-gray-400 text-sm">–</span>
               <input
                 type="date"
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className="text-sm text-gray-700 focus:outline-none border-none"
+                className="text-sm text-gray-700 focus:outline-none border-none flex-1 min-w-0"
               />
             </div>
-            <button
-              onClick={fetchCars}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap"
-            >
-              Find Cars
-            </button>
           </div>
         </div>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        {/* Mobile filter toggle */}
+        <div className="lg:hidden mb-3">
+          <button
+            onClick={() => setSidebarOpen((o) => !o)}
+            className="flex items-center gap-2 border border-gray-300 rounded-lg px-4 py-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+          >
+            <SlidersHorizontal className="w-4 h-4" />
+            Filters
+            {sidebarOpen ? ' ▲' : ' ▼'}
+          </button>
+          {sidebarOpen && (
+            <div className="mt-2">
+              <FilterSidebar
+                activeCategory={activeCategory}
+                setActiveCategory={setActiveCategory}
+                priceRange={priceRange}
+                setPriceRange={setPriceRange}
+                onApply={() => { fetchCars(); setSidebarOpen(false); }}
+              />
+            </div>
+          )}
+        </div>
+
         <div className="flex gap-6">
-          {/* Sidebar */}
-          <FilterSidebar
-            activeCategory={activeCategory}
-            setActiveCategory={setActiveCategory}
-            priceRange={priceRange}
-            setPriceRange={setPriceRange}
-            onApply={fetchCars}
-          />
+          {/* Sidebar — desktop only */}
+          <div className="hidden lg:block">
+            <FilterSidebar
+              activeCategory={activeCategory}
+              setActiveCategory={setActiveCategory}
+              priceRange={priceRange}
+              setPriceRange={setPriceRange}
+              onApply={fetchCars}
+            />
+          </div>
 
           {/* Car grid */}
           <div className="flex-1 min-w-0">
