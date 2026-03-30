@@ -113,7 +113,7 @@ export const api = {
   getBookings: () => request('/bookings'),
   getOwnerBookings: () => request('/bookings/owner'),
   getBooking: (id: string) => request(`/bookings/${id}`),
-  createBooking: (body: { carId: string; startDate: string; endDate: string; message?: string }) =>
+  createBooking: (body: { carId: string; startDate: string; endDate?: string; startTime?: string; endTime?: string; bookingType?: 'daily' | 'hourly'; message?: string }) =>
     request('/bookings', { method: 'POST', body: JSON.stringify(body) }),
   updateBookingStatus: (id: string, status: string) =>
     request(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),

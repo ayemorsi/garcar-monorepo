@@ -20,6 +20,7 @@ import {
   X,
   BadgeCheck,
   Calendar,
+  Clock,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
@@ -139,33 +140,62 @@ function RuleItem({ label, allowed }: { label: string; allowed: boolean }) {
 
 function BookingWidget({ car }: { car: CarDetail }) {
   const router = useRouter();
+  const hasHourly = car.pricehr > 0;
+  const [mode, setMode] = useState<'daily' | 'hourly'>('daily');
+
+  // Daily fields
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+
+  // Hourly fields
+  const [hourDate, setHourDate] = useState('');
+  const [startTime, setStartTime] = useState('09:00');
+  const [endTime, setEndTime] = useState('11:00');
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // Daily calculations
   const days = startDate && endDate
     ? Math.max(1, Math.round((new Date(endDate).getTime() - new Date(startDate).getTime()) / (1000 * 60 * 60 * 24)))
     : 1;
-  const subtotal = car.price * days;
+
+  // Hourly calculations
+  const hours = (() => {
+    if (!startTime || !endTime) return 1;
+    const [sh, sm] = startTime.split(':').map(Number);
+    const [eh, em] = endTime.split(':').map(Number);
+    const diff = (eh * 60 + em) - (sh * 60 + sm);
+    return Math.max(1, Math.ceil(diff / 60));
+  })();
+
+  const subtotal = mode === 'hourly' ? car.pricehr * hours : car.price * days;
   const serviceFee = Math.round(subtotal * 0.12);
   const protection = 15;
   const total = subtotal + serviceFee + protection;
 
   async function handleBook() {
-    if (!startDate || !endDate) {
-      setError('Please select trip dates.');
-      return;
-    }
     const { userId } = getAuth();
     if (!userId) {
       router.push('/auth/login?next=' + window.location.pathname);
       return;
     }
+    if (mode === 'daily' && (!startDate || !endDate)) {
+      setError('Please select trip dates.');
+      return;
+    }
+    if (mode === 'hourly' && !hourDate) {
+      setError('Please select a date.');
+      return;
+    }
     try {
       setLoading(true);
       setError('');
-      await api.createBooking({ carId: car._id, startDate, endDate });
+      if (mode === 'hourly') {
+        await api.createBooking({ carId: car._id, startDate: hourDate, startTime, endTime, bookingType: 'hourly' });
+      } else {
+        await api.createBooking({ carId: car._id, startDate, endDate, bookingType: 'daily' });
+      }
       router.push('/my-trips');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Booking failed');
@@ -176,44 +206,110 @@ function BookingWidget({ car }: { car: CarDetail }) {
 
   return (
     <div className="bg-white border border-gray-200 rounded-xl p-5 sticky top-20">
+      {/* Price header */}
       <div className="flex items-baseline gap-1 mb-4">
-        <span className="text-2xl font-bold text-gray-900">${car.price}</span>
-        <span className="text-gray-500 text-sm">/day</span>
+        <span className="text-2xl font-bold text-gray-900">
+          ${mode === 'hourly' ? car.pricehr : car.price}
+        </span>
+        <span className="text-gray-500 text-sm">{mode === 'hourly' ? '/hr' : '/day'}</span>
+        {hasHourly && mode === 'daily' && (
+          <span className="ml-auto text-xs text-gray-400">${car.pricehr}/hr also available</span>
+        )}
       </div>
 
-      {/* Date pickers */}
-      <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
-        <div className="grid grid-cols-2 divide-x divide-gray-200">
-          <div className="p-3">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Trip Start
-            </label>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="text-sm text-gray-800 focus:outline-none w-full"
-              />
+      {/* Daily / Hourly toggle — only show if pricehr is set */}
+      {hasHourly && (
+        <div className="flex border border-gray-200 rounded-lg p-1 mb-4">
+          {(['daily', 'hourly'] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => { setMode(m); setError(''); }}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
+                mode === m ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
+              }`}
+            >
+              {m === 'daily' ? <Calendar className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+              {m}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Inputs */}
+      {mode === 'daily' ? (
+        <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+          <div className="grid grid-cols-2 divide-x divide-gray-200">
+            <div className="p-3">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Start</label>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="date"
+                  value={startDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="text-sm text-gray-800 focus:outline-none w-full"
+                />
+              </div>
             </div>
-          </div>
-          <div className="p-3">
-            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">
-              Trip End
-            </label>
-            <div className="flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="text-sm text-gray-800 focus:outline-none w-full"
-              />
+            <div className="p-3">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">End</label>
+              <div className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="date"
+                  value={endDate}
+                  min={startDate || new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="text-sm text-gray-800 focus:outline-none w-full"
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      ) : (
+        <div className="border border-gray-200 rounded-lg overflow-hidden mb-4">
+          <div className="p-3 border-b border-gray-200">
+            <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">Date</label>
+            <div className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+              <input
+                type="date"
+                value={hourDate}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setHourDate(e.target.value)}
+                className="text-sm text-gray-800 focus:outline-none w-full"
+              />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 divide-x divide-gray-200">
+            <div className="p-3">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">From</label>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="time"
+                  value={startTime}
+                  onChange={(e) => setStartTime(e.target.value)}
+                  className="text-sm text-gray-800 focus:outline-none w-full"
+                />
+              </div>
+            </div>
+            <div className="p-3">
+              <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1">To</label>
+              <div className="flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-gray-400 flex-shrink-0" />
+                <input
+                  type="time"
+                  value={endTime}
+                  onChange={(e) => setEndTime(e.target.value)}
+                  className="text-sm text-gray-800 focus:outline-none w-full"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {error && <p className="text-red-600 text-xs mb-3">{error}</p>}
 
@@ -228,10 +324,17 @@ function BookingWidget({ car }: { car: CarDetail }) {
 
       {/* Pricing breakdown */}
       <div className="space-y-2 text-sm">
-        <div className="flex justify-between text-gray-600">
-          <span>${car.price} × {days} day{days !== 1 ? 's' : ''}</span>
-          <span>${subtotal}</span>
-        </div>
+        {mode === 'daily' ? (
+          <div className="flex justify-between text-gray-600">
+            <span>${car.price} × {days} day{days !== 1 ? 's' : ''}</span>
+            <span>${subtotal}</span>
+          </div>
+        ) : (
+          <div className="flex justify-between text-gray-600">
+            <span>${car.pricehr} × {hours} hour{hours !== 1 ? 's' : ''}</span>
+            <span>${subtotal}</span>
+          </div>
+        )}
         <div className="flex justify-between text-gray-600">
           <span>GarKar service fee</span>
           <span>${serviceFee}</span>

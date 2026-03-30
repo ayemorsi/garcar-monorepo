@@ -40,6 +40,7 @@ export default function ListPricingPage() {
   const [publishError, setPublishError] = useState('');
   const [priceTab, setPriceTab] = useState<PriceTab>('daily');
   const [dailyPrice, setDailyPrice] = useState('65');
+  const [hourlyPrice, setHourlyPrice] = useState('15');
 
   const [discounts, setDiscounts] = useState<DiscountToggle[]>([
     { id: 'weekly', label: 'Weekly Discount', description: '10% off for 7+ days', enabled: true },
@@ -125,11 +126,20 @@ export default function ListPricingPage() {
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm font-medium">$</span>
                   <input
                     type="number"
-                    value={dailyPrice}
-                    onChange={(e) => setDailyPrice(e.target.value)}
+                    value={priceTab === 'daily' ? dailyPrice : hourlyPrice}
+                    onChange={(e) =>
+                      priceTab === 'daily'
+                        ? setDailyPrice(e.target.value)
+                        : setHourlyPrice(e.target.value)
+                    }
                     className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  {priceTab === 'daily'
+                    ? 'Charged per full day'
+                    : 'Charged per hour — set to 0 to disable hourly booking'}
+                </p>
               </div>
 
               {/* Recommended Price */}
@@ -209,7 +219,7 @@ export default function ListPricingPage() {
                       seats: parseInt(saved.seats) || 5,
                       transmission: saved.transmission || 'Automatic',
                       price: parseFloat(dailyPrice) || 65,
-                      pricehr: 0,
+                      pricehr: parseFloat(hourlyPrice) || 0,
                       description: saved.description || '',
                       rules: selectedRules,
                       fuelPolicy,

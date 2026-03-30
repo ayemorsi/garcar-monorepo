@@ -24,14 +24,30 @@ const authenticate = (req, res, next) => {
 // POST /api/bookings — create a new booking
 router.post('/bookings', authenticate, async (req, res) => {
   try {
-    const { carId, startDate, endDate, message } = req.body;
+    const { carId, startDate, endDate, startTime, endTime, bookingType, message } = req.body;
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found' });
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
-    const totalPrice = days * car.price;
+    let start, end, totalPrice, notifDesc;
+    const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    if (bookingType === 'hourly' && car.pricehr > 0) {
+      // Hourly: startDate is the date, startTime/endTime are HH:MM
+      const dateStr = startDate; // e.g. "2024-06-15"
+      start = new Date(`${dateStr}T${startTime || '09:00'}`);
+      end   = new Date(`${dateStr}T${endTime   || '10:00'}`);
+      if (end <= start) end = new Date(start.getTime() + 60 * 60 * 1000); // at least 1 hr
+      const hours = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60)));
+      totalPrice = hours * car.pricehr;
+      notifDesc = `${req.user.username} wants to book your ${car.make} ${car.model} on ${fmt(start)} from ${startTime} to ${endTime} (${hours}h).`;
+    } else {
+      // Daily
+      start = new Date(startDate);
+      end   = new Date(endDate);
+      const days = Math.max(1, Math.ceil((end - start) / (1000 * 60 * 60 * 24)));
+      totalPrice = days * car.price;
+      notifDesc = `${req.user.username} wants to book your ${car.make} ${car.model} from ${fmt(startDate)} to ${fmt(endDate)}.`;
+    }
 
     const booking = new Booking({
       carId,
@@ -46,14 +62,11 @@ router.post('/bookings', authenticate, async (req, res) => {
 
     await booking.save();
 
-    // Notify the car owner
-    const renterName = req.user.username;
-    const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     await Notification.create({
       userId: car.userId,
       type: 'new_booking',
       title: 'New Booking Request',
-      message: `${renterName} wants to book your ${car.make} ${car.model} from ${fmt(startDate)} to ${fmt(endDate)}.`,
+      message: notifDesc,
       bookingId: booking._id,
     });
 
