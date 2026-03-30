@@ -49,8 +49,15 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function CarCard({ car }: { car: CarItem }) {
+function CarCard({ car, dateFrom, dateTo }: { car: CarItem; dateFrom?: string; dateTo?: string }) {
   const name = `${car.make} ${car.model}`;
+  const hasDates = !!(dateFrom && dateTo);
+  const badge = hasDates
+    ? { label: 'Available', cls: 'bg-green-100 text-green-700' }
+    : car.available
+      ? { label: 'Available', cls: 'bg-green-100 text-green-700' }
+      : null;
+
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
       <div className="relative">
@@ -66,10 +73,10 @@ function CarCard({ car }: { car: CarItem }) {
         <div className={car.images?.[0] ? 'hidden' : ''}>
           <CarImagePlaceholder />
         </div>
-        {car.available && (
+        {badge && (
           <div className="absolute top-3 left-3">
-            <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700">
-              AVAILABLE
+            <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${badge.cls}`}>
+              {badge.label}
             </span>
           </div>
         )}
@@ -236,6 +243,8 @@ function BrowsePageContent({
       if (activeCategory === 'Electric Only') queryParams.type = 'Electric';
       queryParams.minPrice = priceRange[0];
       queryParams.maxPrice = priceRange[1];
+      if (dateFrom) queryParams.startDate = dateFrom;
+      if (dateTo)   queryParams.endDate   = dateTo;
       const data = await api.getCars(queryParams as Parameters<typeof api.getCars>[0]) as CarItem[];
       let sorted = [...data];
       if (sort === 'Price: Low to High') sorted.sort((a, b) => a.price - b.price);
@@ -348,7 +357,11 @@ function BrowsePageContent({
               <div>
                 <h1 className="text-xl font-bold text-gray-900">Available Cars</h1>
                 <p className="text-sm text-gray-500 mt-0.5">
-                  {loading ? 'Loading...' : `Showing ${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''}`}
+                  {loading ? 'Loading...' : (
+                    dateFrom && dateTo
+                      ? `${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''} available ${new Date(dateFrom).toLocaleDateString('en-US',{month:'short',day:'numeric'})}–${new Date(dateTo).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`
+                      : `Showing ${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''}`
+                  )}
                 </p>
               </div>
               <div className="relative">
@@ -389,7 +402,7 @@ function BrowsePageContent({
             ) : filteredCars.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredCars.map((car) => (
-                  <CarCard key={car._id} car={car} />
+                  <CarCard key={car._id} car={car} dateFrom={dateFrom} dateTo={dateTo} />
                 ))}
               </div>
             ) : (

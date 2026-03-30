@@ -15,6 +15,11 @@ function getToken() {
   return localStorage.getItem('token');
 }
 
+function getRefreshTokenStored() {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refreshToken');
+}
+
 /** Decode a JWT payload without verifying the signature (routing use only). */
 export function decodeJwt(token: string): { userId?: string; isVerified?: boolean } | null {
   try {
@@ -26,7 +31,32 @@ export function decodeJwt(token: string): { userId?: string; isVerified?: boolea
   }
 }
 
-async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+let refreshPromise: Promise<string> | null = null;
+
+async function attemptTokenRefresh(): Promise<string> {
+  // Deduplicate concurrent refresh attempts
+  if (refreshPromise) return refreshPromise;
+  refreshPromise = (async () => {
+    const refreshToken = getRefreshTokenStored();
+    if (!refreshToken) throw new Error('No refresh token');
+    const res = await fetch(`${BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refreshToken }),
+    });
+    if (!res.ok) throw new Error('Refresh failed');
+    const { token } = await res.json();
+    localStorage.setItem('token', token);
+    return token;
+  })();
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+async function request<T>(path: string, options: RequestInit = {}, isRetry = false): Promise<T> {
   const token = getToken();
   const headers: Record<string, string> = {
     ...(options.body && !(options.body instanceof FormData)
@@ -37,6 +67,23 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   };
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
+
+  // Auto-refresh on 401 (but not on the refresh endpoint itself or on retry)
+  if (res.status === 401 && !isRetry && path !== '/auth/refresh') {
+    try {
+      await attemptTokenRefresh();
+      return request<T>(path, options, true);
+    } catch {
+      // Refresh failed — clear session and redirect to login
+      localStorage.removeItem('token');
+      localStorage.removeItem('userId');
+      localStorage.removeItem('refreshToken');
+      if (typeof window !== 'undefined') {
+        window.location.href = '/auth/login';
+      }
+      throw new Error('Session expired. Please log in again.');
+    }
+  }
 
   // Backend returns plain text on some routes (register, errors), JSON on others
   const contentType = res.headers.get('content-type') || '';
@@ -57,13 +104,14 @@ export const api = {
 
   /** Returns the raw token plus decoded userId and isVerified. */
   login: async (body: { username: string; password: string }) => {
-    const data = await request<{ token: string }>('/login', {
+    const data = await request<{ token: string; refreshToken?: string }>('/login', {
       method: 'POST',
       body: JSON.stringify(body),
     });
     const payload = decodeJwt(data.token);
     return {
       token: data.token,
+      refreshToken: data.refreshToken ?? '',
       userId: payload?.userId ?? '',
       isVerified: payload?.isVerified ?? false,
     };
@@ -87,7 +135,7 @@ export const api = {
     request(`/verification/${userId}`),
 
   // Cars
-  getCars: (params?: { type?: string; minPrice?: number; maxPrice?: number; search?: string }) => {
+  getCars: (params?: { type?: string; minPrice?: number; maxPrice?: number; search?: string; startDate?: string; endDate?: string }) => {
     const qs = params ? '?' + new URLSearchParams(
       Object.entries(params)
         .filter(([, v]) => v !== undefined && v !== '')
@@ -97,6 +145,22 @@ export const api = {
   },
 
   getCar: (id: string) => request(`/cars/${id}`),
+
+  getCarAvailability: (id: string, year: number, month: number) =>
+    request<{
+      weeklySchedule: Record<string, boolean>;
+      availableHoursStart: string;
+      availableHoursEnd: string;
+      blockedDates: string[];
+      bookings: { startDate: string; endDate: string; status: string }[];
+    }>(`/cars/${id}/availability?year=${year}&month=${month}`),
+
+  updateCarAvailability: (id: string, body: {
+    weeklySchedule: Record<string, boolean>;
+    availableHoursStart: string;
+    availableHoursEnd: string;
+    blockedDates: string[];
+  }) => request(`/cars/${id}/availability`, { method: 'PUT', body: JSON.stringify(body) }),
 
   getUserCars: () => request('/user-cars'),
 
@@ -117,6 +181,18 @@ export const api = {
     request('/bookings', { method: 'POST', body: JSON.stringify(body) }),
   updateBookingStatus: (id: string, status: string) =>
     request(`/bookings/${id}`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  checkIn: (id: string, photos: File[]) => {
+    const fd = new FormData();
+    photos.forEach((f) => fd.append('photos', f));
+    return request(`/bookings/${id}/checkin`, { method: 'POST', body: fd });
+  },
+  checkOut: (id: string, photos: File[]) => {
+    const fd = new FormData();
+    photos.forEach((f) => fd.append('photos', f));
+    return request(`/bookings/${id}/checkout`, { method: 'POST', body: fd });
+  },
+  getBookingPhotos: (id: string) =>
+    request<{ checkInPhotos: string[]; checkOutPhotos: string[]; checkedInAt: string; checkedOutAt: string }>(`/bookings/${id}/photos`),
 
   // Messages
   getConversations: () => request('/conversations'),

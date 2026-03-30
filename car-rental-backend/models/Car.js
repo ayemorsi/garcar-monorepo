@@ -18,6 +18,19 @@ const carSchema = new mongoose.Schema({
   dailyDistanceLimit: { type: Number, default: 200 },
   images: [String],
   available: { type: Boolean, default: true },
+  // Availability scheduling
+  weeklySchedule: {
+    sun: { type: Boolean, default: true },
+    mon: { type: Boolean, default: true },
+    tue: { type: Boolean, default: true },
+    wed: { type: Boolean, default: true },
+    thu: { type: Boolean, default: true },
+    fri: { type: Boolean, default: true },
+    sat: { type: Boolean, default: true },
+  },
+  availableHoursStart: { type: String, default: '07:00' },
+  availableHoursEnd:   { type: String, default: '21:00' },
+  blockedDates: [{ type: String }], // 'YYYY-MM-DD' strings
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }
 });

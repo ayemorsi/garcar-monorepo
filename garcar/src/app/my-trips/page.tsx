@@ -9,6 +9,8 @@ import {
   Headphones,
   CheckCircle2,
   MessageCircle,
+  PlayCircle,
+  StopCircle,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
@@ -34,6 +36,8 @@ interface Booking {
   endDate: string;
   totalPrice: number;
   status: string;
+  checkInPhotos?: string[];
+  checkOutPhotos?: string[];
 }
 
 function formatDate(dateStr: string) {
@@ -61,6 +65,7 @@ function BookingRow({ booking, isPast }: { booking: Booking; isPast: boolean }) 
         <div className="flex items-center gap-2 mb-1">
           <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${
             booking.status === 'confirmed' ? 'text-green-700 bg-green-50' :
+            booking.status === 'active' ? 'text-blue-700 bg-blue-50' :
             booking.status === 'pending' ? 'text-yellow-700 bg-yellow-50' :
             booking.status === 'completed' ? 'text-gray-500 bg-gray-100' :
             'text-red-700 bg-red-50'
@@ -80,7 +85,25 @@ function BookingRow({ booking, isPast }: { booking: Booking; isPast: boolean }) 
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+        {booking.status === 'confirmed' && (
+          <Link
+            href={`/trips/${booking._id}/checkin`}
+            className="border border-green-400 text-green-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-green-50 transition-colors flex items-center gap-1"
+          >
+            <PlayCircle className="w-3 h-3" />
+            Start Trip
+          </Link>
+        )}
+        {booking.status === 'active' && (
+          <Link
+            href={`/trips/${booking._id}/checkout`}
+            className="border border-orange-400 text-orange-700 text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-orange-50 transition-colors flex items-center gap-1"
+          >
+            <StopCircle className="w-3 h-3" />
+            End Trip
+          </Link>
+        )}
         {isPast ? (
           <Link
             href={`/reviews/${booking._id}`}
@@ -117,8 +140,10 @@ export default function MyTripsPage() {
   }, []);
 
   const now = new Date();
-  const upcoming = bookings.filter((b) => new Date(b.endDate) >= now && b.status !== 'cancelled');
-  const past = bookings.filter((b) => new Date(b.endDate) < now || b.status === 'completed');
+  const upcoming = bookings.filter(
+    (b) => b.status === 'active' || ((new Date(b.endDate) >= now) && b.status !== 'cancelled' && b.status !== 'completed')
+  );
+  const past = bookings.filter((b) => b.status === 'completed' || b.status === 'cancelled' || (new Date(b.endDate) < now && b.status !== 'active'));
 
   const tabs: Array<{ id: Tab; label: string; count?: number }> = [
     { id: 'upcoming', label: 'Upcoming', count: upcoming.length },

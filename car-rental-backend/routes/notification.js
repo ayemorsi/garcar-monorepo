@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const Notification = require('../models/Notification');
 
 const router = express.Router();
-const secretKey = process.env.JWT_SECRET || 'your_secret_key';
+const { jwtSecret: secretKey } = require('../config');
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;

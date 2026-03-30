@@ -8,6 +8,7 @@ import {
   Info,
   Rocket,
   Zap,
+  Clock,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
@@ -57,6 +58,17 @@ export default function ListPricingPage() {
   const [fuelPolicy, setFuelPolicy] = useState('Return at same level');
   const [distanceLimit, setDistanceLimit] = useState('200');
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('km');
+
+  const DAYS = [
+    { id: 'sun', label: 'S' }, { id: 'mon', label: 'M' }, { id: 'tue', label: 'T' },
+    { id: 'wed', label: 'W' }, { id: 'thu', label: 'T' }, { id: 'fri', label: 'F' },
+    { id: 'sat', label: 'S' },
+  ];
+  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, boolean>>(
+    { sun: false, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false }
+  );
+  const [hoursStart, setHoursStart] = useState('07:00');
+  const [hoursEnd, setHoursEnd] = useState('21:00');
 
   function toggleDiscount(id: string) {
     setDiscounts((prev) =>
@@ -191,6 +203,59 @@ export default function ListPricingPage() {
               </div>
             </div>
 
+            {/* Availability Schedule */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock className="w-4 h-4 text-blue-600" />
+                <h2 className="text-base font-semibold text-gray-900">When is it available?</h2>
+              </div>
+
+              {/* Day toggles */}
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Days of the week</p>
+              <div className="flex gap-1.5 mb-5">
+                {DAYS.map((d) => (
+                  <button
+                    key={d.id}
+                    onClick={() => setWeeklySchedule(prev => ({ ...prev, [d.id]: !prev[d.id] }))}
+                    className={`w-9 h-9 rounded-full text-sm font-semibold transition-colors ${
+                      weeklySchedule[d.id]
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* Hours */}
+              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Available hours</p>
+              <div className="flex items-center gap-3">
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">From</label>
+                  <input
+                    type="time"
+                    value={hoursStart}
+                    onChange={(e) => setHoursStart(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <span className="text-gray-400 mt-4">–</span>
+                <div>
+                  <label className="text-xs text-gray-400 block mb-1">To</label>
+                  <input
+                    type="time"
+                    value={hoursEnd}
+                    onChange={(e) => setHoursEnd(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                You can block specific dates anytime from your host dashboard after publishing.
+              </p>
+            </div>
+
             {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-2">
               <Link
@@ -226,6 +291,9 @@ export default function ListPricingPage() {
                       dailyDistanceLimit: parseInt(distanceLimit) || 200,
                       images: saved.images || [],
                       available: true,
+                      weeklySchedule,
+                      availableHoursStart: hoursStart,
+                      availableHoursEnd: hoursEnd,
                     });
                     localStorage.removeItem('garkar_list_car');
                     router.push('/host/cars');

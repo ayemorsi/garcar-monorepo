@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Car, MapPin, CheckCircle, Key, Shield } from 'lucide-react';
 import { api } from '@/lib/api';
-import { saveAuth } from '@/lib/auth';
+import { saveAuth, saveRefreshToken } from '@/lib/auth';
 
 type Building = { _id: string; name: string; address: string };
 
@@ -55,6 +55,7 @@ export default function SignUpPage() {
       await api.register({ username, password: form.password, building: selectedBuilding?.name || '', firstName: form.firstName, lastName: form.lastName });
       const data = await api.login({ username, password: form.password });
       saveAuth(data.token, data.userId);
+      if (data.refreshToken) saveRefreshToken(data.refreshToken);
       router.push(`/verify/residency?userId=${data.userId}&building=${encodeURIComponent(selectedBuilding?.name || '')}`);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');

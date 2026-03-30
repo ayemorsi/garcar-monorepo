@@ -1,9 +1,10 @@
 const express = require('express');
 const Car = require('../models/Car');
+const Booking = require('../models/Booking');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
-const secretKey = process.env.JWT_SECRET || 'your_secret_key'; // Should be stored in environment variables
+const { jwtSecret: secretKey } = require('../config');
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {
@@ -56,10 +57,10 @@ router.get('/user-cars', authenticate, async (req, res) => {
   }
 });
 
-// GET /api/cars — get all cars with optional filters
+// GET /api/cars — get all cars with optional filters including date availability
 router.get('/cars', async (req, res) => {
   try {
-    const { type, minPrice, maxPrice, search } = req.query;
+    const { type, minPrice, maxPrice, search, startDate, endDate } = req.query;
     const filter = {};
 
     if (type) filter.type = type;
@@ -70,15 +71,46 @@ router.get('/cars', async (req, res) => {
     }
     if (search) {
       const regex = new RegExp(search, 'i');
-      filter.$or = [
-        { make: regex },
-        { model: regex },
-        { description: regex },
-      ];
+      filter.$or = [{ make: regex }, { model: regex }, { description: regex }];
     }
 
-    const cars = await Car.find(filter);
-    res.json(cars || []);
+    let cars = await Car.find(filter);
+
+    // Date availability filtering
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end   = new Date(endDate);
+
+      // Cars with overlapping confirmed/active/pending bookings
+      const bookedBookings = await Booking.find({
+        status: { $in: ['confirmed', 'active', 'pending'] },
+        startDate: { $lte: end },
+        endDate:   { $gte: start },
+      }).select('carId');
+      const bookedCarIds = new Set(bookedBookings.map(b => b.carId.toString()));
+
+      // Build set of day-names and date strings in the requested range
+      const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+      const requiredDayNames = new Set();
+      const dateStrings = [];
+      for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
+        requiredDayNames.add(DAY_NAMES[d.getDay()]);
+        dateStrings.push(d.toISOString().split('T')[0]);
+      }
+
+      cars = cars.filter(car => {
+        if (bookedCarIds.has(car._id.toString())) return false;
+        const ws = car.weeklySchedule || {};
+        for (const day of requiredDayNames) {
+          if (ws[day] === false) return false;
+        }
+        const blocked = car.blockedDates || [];
+        if (blocked.some(d => dateStrings.includes(d))) return false;
+        return true;
+      });
+    }
+
+    res.json(cars);
   } catch (error) {
     console.error('Error fetching cars:', error);
     res.status(500).json({ message: 'Error fetching cars' });
@@ -136,6 +168,55 @@ router.put('/cars/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error updating car:', error);
     res.status(500).json({ message: 'Error updating car' });
+  }
+});
+
+// GET /api/cars/:id/availability?year=2026&month=4
+router.get('/cars/:id/availability', async (req, res) => {
+  try {
+    const car = await Car.findById(req.params.id)
+      .select('weeklySchedule availableHoursStart availableHoursEnd blockedDates');
+    if (!car) return res.status(404).json({ message: 'Car not found' });
+
+    let bookings = [];
+    const { year, month } = req.query;
+    if (year && month) {
+      const y = parseInt(year), m = parseInt(month);
+      const start = new Date(y, m - 1, 1);
+      const end   = new Date(y, m, 0, 23, 59, 59);
+      bookings = await Booking.find({
+        carId:     req.params.id,
+        status:    { $in: ['confirmed', 'active', 'pending'] },
+        startDate: { $lte: end },
+        endDate:   { $gte: start },
+      }).select('startDate endDate status');
+    }
+
+    res.json({
+      weeklySchedule:     car.weeklySchedule      || {},
+      availableHoursStart: car.availableHoursStart || '07:00',
+      availableHoursEnd:   car.availableHoursEnd   || '21:00',
+      blockedDates:        car.blockedDates         || [],
+      bookings,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching availability' });
+  }
+});
+
+// PUT /api/cars/:id/availability
+router.put('/cars/:id/availability', authenticate, async (req, res) => {
+  try {
+    const { weeklySchedule, availableHoursStart, availableHoursEnd, blockedDates } = req.body;
+    const car = await Car.findOneAndUpdate(
+      { _id: req.params.id, userId: req.userId },
+      { weeklySchedule, availableHoursStart, availableHoursEnd, blockedDates },
+      { new: true }
+    );
+    if (!car) return res.status(404).json({ message: 'Car not found or unauthorized' });
+    res.json(car);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating availability' });
   }
 });
 

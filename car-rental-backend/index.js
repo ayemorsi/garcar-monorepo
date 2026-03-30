@@ -12,17 +12,16 @@ const bookingRoutes = require('./routes/booking');
 const messageRoutes = require('./routes/message');
 const userRoutes = require('./routes/user');
 
-const app = express();
-const port = 5001;
+const { jwtSecret: secretKey, mongoUrl, port } = require('./config');
 
-const secretKey = 'your_secret_key'; // Should be stored in environment variables
+const app = express();
 
 // Middleware
 app.use(cors());
 app.use(bodyParser.json());
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/carRental', { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
         console.log('Connected to MongoDB');
     })

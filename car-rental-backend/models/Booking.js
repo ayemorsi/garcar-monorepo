@@ -9,6 +9,10 @@ const bookingSchema = new mongoose.Schema({
   totalPrice: { type: Number, required: true },
   status: { type: String, enum: ['pending', 'confirmed', 'active', 'completed', 'cancelled'], default: 'pending' },
   message: { type: String },
+  checkInPhotos: [{ type: String }],
+  checkOutPhotos: [{ type: String }],
+  checkedInAt: { type: Date },
+  checkedOutAt: { type: Date },
   createdAt: { type: Date, default: Date.now }
 });
 

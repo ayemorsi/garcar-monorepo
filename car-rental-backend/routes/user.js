@@ -4,7 +4,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/User');
 const router = express.Router();
 
-const secretKey = process.env.JWT_SECRET || 'your_secret_key';
+const { jwtSecret: secretKey } = require('../config');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;

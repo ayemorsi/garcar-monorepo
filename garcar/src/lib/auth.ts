@@ -13,9 +13,19 @@ export function saveAuth(token: string, userId: string) {
   setCookie('garkar_userId', userId);
 }
 
+export function saveRefreshToken(refreshToken: string) {
+  localStorage.setItem('refreshToken', refreshToken);
+}
+
+export function getRefreshToken(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem('refreshToken');
+}
+
 export function clearAuth() {
   localStorage.removeItem('token');
   localStorage.removeItem('userId');
+  localStorage.removeItem('refreshToken');
   clearCookie('garkar_token');
   clearCookie('garkar_userId');
 }

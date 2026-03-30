@@ -1,11 +1,21 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const multer = require('multer');
 const Booking = require('../models/Booking');
 const Car = require('../models/Car');
 const Notification = require('../models/Notification');
 const router = express.Router();
 
-const secretKey = process.env.JWT_SECRET || 'your_secret_key';
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 10 * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) cb(null, true);
+    else cb(new Error('Only image files are allowed'));
+  },
+});
+
+const { jwtSecret: secretKey } = require('../config');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -158,6 +168,86 @@ router.put('/bookings/:id', authenticate, async (req, res) => {
   } catch (error) {
     console.error('Error updating booking:', error);
     res.status(500).json({ message: 'Error updating booking' });
+  }
+});
+
+// POST /api/bookings/:id/checkin — renter uploads pre-trip damage photos, moves to 'active'
+router.post('/bookings/:id/checkin', authenticate, upload.array('photos', 20), async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.renterId.toString() !== req.user.userId)
+      return res.status(403).json({ message: 'Forbidden' });
+    if (booking.status !== 'confirmed')
+      return res.status(400).json({ message: 'Booking must be confirmed before check-in' });
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ message: 'At least one photo is required' });
+
+    booking.checkInPhotos = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`);
+    booking.checkedInAt = new Date();
+    booking.status = 'active';
+    await booking.save();
+    res.json(booking);
+  } catch (error) {
+    console.error('Error checking in:', error);
+    res.status(500).json({ message: 'Error checking in' });
+  }
+});
+
+// POST /api/bookings/:id/checkout — renter uploads post-trip damage photos, moves to 'completed'
+router.post('/bookings/:id/checkout', authenticate, upload.array('photos', 20), async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id);
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (booking.renterId.toString() !== req.user.userId)
+      return res.status(403).json({ message: 'Forbidden' });
+    if (booking.status !== 'active')
+      return res.status(400).json({ message: 'Booking must be active before check-out' });
+    if (!req.files || req.files.length === 0)
+      return res.status(400).json({ message: 'At least one photo is required' });
+
+    booking.checkOutPhotos = req.files.map(f => `data:${f.mimetype};base64,${f.buffer.toString('base64')}`);
+    booking.checkedOutAt = new Date();
+    booking.status = 'completed';
+    await booking.save();
+
+    // Notify the owner that the trip is complete
+    const car = await Car.findById(booking.carId).select('make model userId');
+    if (car) {
+      await Notification.create({
+        userId: car.userId,
+        type: 'booking_completed',
+        title: 'Trip Completed',
+        message: `Your ${car.make} ${car.model} has been returned. Check-out photos are available.`,
+        bookingId: booking._id,
+      });
+    }
+    res.json(booking);
+  } catch (error) {
+    console.error('Error checking out:', error);
+    res.status(500).json({ message: 'Error checking out' });
+  }
+});
+
+// GET /api/bookings/:id/photos — owner or renter can view damage photos
+router.get('/bookings/:id/photos', authenticate, async (req, res) => {
+  try {
+    const booking = await Booking.findById(req.params.id)
+      .select('checkInPhotos checkOutPhotos checkedInAt checkedOutAt renterId ownerId carId');
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    if (
+      booking.renterId.toString() !== req.user.userId &&
+      booking.ownerId.toString() !== req.user.userId
+    ) return res.status(403).json({ message: 'Forbidden' });
+
+    res.json({
+      checkInPhotos: booking.checkInPhotos || [],
+      checkOutPhotos: booking.checkOutPhotos || [],
+      checkedInAt: booking.checkedInAt,
+      checkedOutAt: booking.checkedOutAt,
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Error fetching photos' });
   }
 });
 

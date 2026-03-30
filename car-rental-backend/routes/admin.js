@@ -8,7 +8,7 @@ const Booking = require('../models/Booking');
 const AppSettings = require('../models/AppSettings');
 const Building = require('../models/Building');
 
-const secretKey = process.env.JWT_SECRET || 'your_secret_key';
+const { jwtSecret: secretKey } = require('../config');
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 

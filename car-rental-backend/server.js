@@ -1,3 +1,4 @@
+const { jwtSecret: secretKey, mongoUrl, port: configPort } = require('./config');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -19,9 +20,7 @@ const adminRoutes = require('./routes/admin');
 const notificationRoutes = require('./routes/notification');
 
 const app = express();
-const port = process.env.PORT || 5001;
-
-const secretKey = process.env.JWT_SECRET || 'your_secret_key';
+const port = configPort;
 
 // Middleware
 app.use(cors());
@@ -45,7 +44,7 @@ app.use((req, res, next) => {
 let dbConnected = false;
 async function connectDB() {
   if (dbConnected && mongoose.connection.readyState === 1) return;
-  await mongoose.connect(process.env.MONGODB_URL || 'mongodb://localhost:27017/carRental', {
+  await mongoose.connect(mongoUrl, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   });
@@ -126,7 +125,8 @@ app.post('/api/login', async (req, res) => {
         return res.status(401).send('Your account is pending admin approval');
       }
       const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
-      res.json({ token });
+      const refreshToken = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '7d' });
+      res.json({ token, refreshToken });
     } else {
       res.status(401).send('Invalid username or password');
     }
@@ -151,6 +151,25 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
   } catch (error) {
     console.error('Error submitting verification data:', error);
     res.status(500).send('Error submitting verification data');
+  }
+});
+
+// Refresh access token using a long-lived refresh token
+app.post('/api/auth/refresh', async (req, res) => {
+  const { refreshToken } = req.body;
+  if (!refreshToken) return res.status(401).json({ message: 'No refresh token' });
+  try {
+    const decoded = jwt.verify(refreshToken, secretKey);
+    const user = await User.findById(decoded.userId).select('username isVerified role approved');
+    if (!user || user.approved === false) return res.status(401).json({ message: 'Unauthorized' });
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' },
+      secretKey,
+      { expiresIn: '1h' }
+    );
+    res.json({ token });
+  } catch {
+    res.status(401).json({ message: 'Invalid or expired refresh token' });
   }
 });
 

@@ -16,6 +16,7 @@ import {
   ToggleLeft,
   ToggleRight,
   CheckCircle,
+  CalendarDays,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
@@ -346,6 +347,13 @@ export default function OwnerDashboardPage() {
                         ${car.price}/day
                       </div>
                     </div>
+                    <Link
+                      href={`/host/cars/${car._id}/availability`}
+                      className="mt-3 w-full flex items-center justify-center gap-1.5 text-xs font-semibold text-blue-600 border border-blue-200 rounded-lg py-1.5 hover:bg-blue-50 transition-colors"
+                    >
+                      <CalendarDays className="w-3.5 h-3.5" />
+                      Manage Availability
+                    </Link>
                   </div>
                 ))}
               </div>

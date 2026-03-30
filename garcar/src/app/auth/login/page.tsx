@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Car } from 'lucide-react';
 import { api } from '@/lib/api';
-import { saveAuth } from '@/lib/auth';
+import { saveAuth, saveRefreshToken } from '@/lib/auth';
 
 function LoginForm() {
   const router = useRouter();
@@ -24,6 +24,7 @@ function LoginForm() {
     try {
       const data = await api.login({ username: form.email, password: form.password });
       saveAuth(data.token, data.userId);
+      if (data.refreshToken) saveRefreshToken(data.refreshToken);
 
       if (data.isVerified) {
         router.push(next);
