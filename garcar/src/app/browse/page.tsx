@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState, use, useEffect } from 'react';
+import { Suspense, useState, use, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   Car,
@@ -234,6 +234,9 @@ function BrowsePageContent({
   const [error, setError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
+  // Always keep a ref to the latest fetchCars so effects never capture stale state
+  const fetchCarsRef = useRef<() => void>(() => {});
+
   async function fetchCars() {
     try {
       setLoading(true);
@@ -257,7 +260,16 @@ function BrowsePageContent({
     }
   }
 
-  useEffect(() => { fetchCars(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  fetchCarsRef.current = fetchCars;
+
+  // Initial load
+  useEffect(() => { fetchCarsRef.current(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-apply when any filter changes — debounced 400ms for price slider
+  useEffect(() => {
+    const t = setTimeout(() => fetchCarsRef.current(), 400);
+    return () => clearTimeout(t);
+  }, [priceRange, activeCategory, sort, dateFrom, dateTo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Client-side category filter (SUV/Luxury/Compact can't be queried by server)
   const filteredCars = cars.filter((car) => {
@@ -367,7 +379,7 @@ function BrowsePageContent({
               <div className="relative">
                 <select
                   value={sort}
-                  onChange={(e) => { setSort(e.target.value); fetchCars(); }}
+                  onChange={(e) => setSort(e.target.value)}
                   className="appearance-none pl-3 pr-8 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option>Recommended</option>
