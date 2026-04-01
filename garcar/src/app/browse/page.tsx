@@ -154,7 +154,68 @@ function FilterSidebar({
           <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
             Price Range / day
           </h3>
-          <div className="flex items-center gap-2">
+
+          {/* Current range label */}
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-semibold text-gray-800">${priceRange[0]}</span>
+            <span className="text-xs text-gray-400">–</span>
+            <span className="text-sm font-semibold text-gray-800">${priceRange[1]}</span>
+          </div>
+
+          {/* Dual-handle slider */}
+          <div className="relative h-5 mx-1">
+            {/* Track background */}
+            <div className="absolute top-1/2 left-0 right-0 h-1.5 -translate-y-1/2 bg-gray-200 rounded-full" />
+            {/* Active fill between handles */}
+            <div
+              className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-blue-500 rounded-full pointer-events-none"
+              style={{
+                left: `${(priceRange[0] / 1000) * 100}%`,
+                width: `${((priceRange[1] - priceRange[0]) / 1000) * 100}%`,
+              }}
+            />
+            {/* Min range input — transparent, captures drag */}
+            <input
+              type="range"
+              min={0}
+              max={1000}
+              step={5}
+              value={priceRange[0]}
+              onChange={(e) => {
+                const val = Math.min(Number(e.target.value), priceRange[1] - 5);
+                setPriceRange([val, priceRange[1]]);
+              }}
+              className="absolute w-full h-full opacity-0 cursor-pointer"
+              style={{ zIndex: priceRange[0] >= priceRange[1] - 5 ? 5 : 3 }}
+            />
+            {/* Max range input — transparent, captures drag */}
+            <input
+              type="range"
+              min={0}
+              max={1000}
+              step={5}
+              value={priceRange[1]}
+              onChange={(e) => {
+                const val = Math.max(Number(e.target.value), priceRange[0] + 5);
+                setPriceRange([priceRange[0], val]);
+              }}
+              className="absolute w-full h-full opacity-0 cursor-pointer"
+              style={{ zIndex: 4 }}
+            />
+            {/* Min handle visual */}
+            <div
+              className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
+              style={{ left: `${(priceRange[0] / 1000) * 100}%`, zIndex: 6 }}
+            />
+            {/* Max handle visual */}
+            <div
+              className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
+              style={{ left: `${(priceRange[1] / 1000) * 100}%`, zIndex: 6 }}
+            />
+          </div>
+
+          {/* Number inputs for precise entry */}
+          <div className="flex items-center gap-2 mt-4">
             <div className="flex-1">
               <label className="text-xs text-gray-400 mb-1 block">Min</label>
               <div className="relative">
@@ -162,10 +223,11 @@ function FilterSidebar({
                 <input
                   type="number"
                   min={0}
-                  max={priceRange[1] - 1}
+                  max={priceRange[1] - 5}
+                  step={5}
                   value={priceRange[0]}
                   onChange={(e) => {
-                    const val = Math.max(0, Math.min(parseInt(e.target.value) || 0, priceRange[1] - 1));
+                    const val = Math.max(0, Math.min(Number(e.target.value) || 0, priceRange[1] - 5));
                     setPriceRange([val, priceRange[1]]);
                   }}
                   className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -179,11 +241,12 @@ function FilterSidebar({
                 <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-500 text-sm">$</span>
                 <input
                   type="number"
-                  min={priceRange[0] + 1}
+                  min={priceRange[0] + 5}
                   max={1000}
+                  step={5}
                   value={priceRange[1]}
                   onChange={(e) => {
-                    const val = Math.max(priceRange[0] + 1, parseInt(e.target.value) || priceRange[0] + 1);
+                    const val = Math.max(priceRange[0] + 5, Number(e.target.value) || priceRange[0] + 5);
                     setPriceRange([priceRange[0], val]);
                   }}
                   className="w-full pl-6 pr-2 py-2 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -191,17 +254,6 @@ function FilterSidebar({
               </div>
             </div>
           </div>
-          <input
-            type="range"
-            min={0}
-            max={1000}
-            value={priceRange[1]}
-            onChange={(e) => {
-              const val = Math.max(priceRange[0] + 1, parseInt(e.target.value));
-              setPriceRange([priceRange[0], val]);
-            }}
-            className="w-full accent-blue-600 mt-3"
-          />
         </div>
 
         <button
