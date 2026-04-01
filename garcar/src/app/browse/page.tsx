@@ -109,6 +109,106 @@ function CarCard({ car, dateFrom, dateTo }: { car: CarItem; dateFrom?: string; d
   );
 }
 
+function DualRangeSlider({
+  value,
+  onChange,
+  min = 0,
+  max = 1000,
+  step = 5,
+}: {
+  value: [number, number];
+  onChange: (v: [number, number]) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const dragging = useRef<'min' | 'max' | null>(null);
+  // Keep latest value/onChange in refs so mouseMove handler never goes stale
+  const valueRef = useRef(value);
+  valueRef.current = value;
+  const onChangeRef = useRef(onChange);
+  onChangeRef.current = onChange;
+
+  function clamp(v: number) {
+    return Math.max(min, Math.min(max, Math.round(v / step) * step));
+  }
+
+  function clientXToValue(clientX: number) {
+    if (!trackRef.current) return min;
+    const { left, width } = trackRef.current.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (clientX - left) / width));
+    return clamp(pct * (max - min) + min);
+  }
+
+  function startDrag(clientX: number) {
+    const val = clientXToValue(clientX);
+    const [lo, hi] = valueRef.current;
+    // Pick whichever handle is closer; ties go to min
+    dragging.current = Math.abs(val - lo) <= Math.abs(val - hi) ? 'min' : 'max';
+    moveDrag(clientX);
+  }
+
+  function moveDrag(clientX: number) {
+    if (!dragging.current) return;
+    const val = clientXToValue(clientX);
+    const [lo, hi] = valueRef.current;
+    if (dragging.current === 'min') {
+      onChangeRef.current([Math.min(val, hi - step), hi]);
+    } else {
+      onChangeRef.current([lo, Math.max(val, lo + step)]);
+    }
+  }
+
+  useEffect(() => {
+    const onMove = (e: MouseEvent | TouchEvent) => {
+      const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      moveDrag(x);
+    };
+    const onUp = () => { dragging.current = null; };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    window.addEventListener('touchmove', onMove);
+    window.addEventListener('touchend', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onUp);
+    };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const minPct = ((value[0] - min) / (max - min)) * 100;
+  const maxPct = ((value[1] - min) / (max - min)) * 100;
+
+  return (
+    <div
+      ref={trackRef}
+      className="relative h-5 cursor-pointer select-none mx-1"
+      onMouseDown={(e) => startDrag(e.clientX)}
+      onTouchStart={(e) => startDrag(e.touches[0].clientX)}
+    >
+      {/* Track */}
+      <div className="absolute top-1/2 left-0 right-0 h-1.5 -translate-y-1/2 bg-gray-200 rounded-full" />
+      {/* Active fill */}
+      <div
+        className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-blue-500 rounded-full pointer-events-none"
+        style={{ left: `${minPct}%`, width: `${maxPct - minPct}%` }}
+      />
+      {/* Min handle */}
+      <div
+        className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
+        style={{ left: `${minPct}%` }}
+      />
+      {/* Max handle */}
+      <div
+        className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
+        style={{ left: `${maxPct}%` }}
+      />
+    </div>
+  );
+}
+
 function FilterSidebar({
   activeCategory,
   setActiveCategory,
@@ -163,56 +263,7 @@ function FilterSidebar({
           </div>
 
           {/* Dual-handle slider */}
-          <div className="relative h-5 mx-1">
-            {/* Track background */}
-            <div className="absolute top-1/2 left-0 right-0 h-1.5 -translate-y-1/2 bg-gray-200 rounded-full" />
-            {/* Active fill between handles */}
-            <div
-              className="absolute top-1/2 h-1.5 -translate-y-1/2 bg-blue-500 rounded-full pointer-events-none"
-              style={{
-                left: `${(priceRange[0] / 1000) * 100}%`,
-                width: `${((priceRange[1] - priceRange[0]) / 1000) * 100}%`,
-              }}
-            />
-            {/* Min range input — transparent, captures drag */}
-            <input
-              type="range"
-              min={0}
-              max={1000}
-              step={5}
-              value={priceRange[0]}
-              onChange={(e) => {
-                const val = Math.min(Number(e.target.value), priceRange[1] - 5);
-                setPriceRange([val, priceRange[1]]);
-              }}
-              className="absolute w-full h-full opacity-0 cursor-pointer"
-              style={{ zIndex: priceRange[0] >= priceRange[1] - 5 ? 5 : 3 }}
-            />
-            {/* Max range input — transparent, captures drag */}
-            <input
-              type="range"
-              min={0}
-              max={1000}
-              step={5}
-              value={priceRange[1]}
-              onChange={(e) => {
-                const val = Math.max(Number(e.target.value), priceRange[0] + 5);
-                setPriceRange([priceRange[0], val]);
-              }}
-              className="absolute w-full h-full opacity-0 cursor-pointer"
-              style={{ zIndex: 4 }}
-            />
-            {/* Min handle visual */}
-            <div
-              className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
-              style={{ left: `${(priceRange[0] / 1000) * 100}%`, zIndex: 6 }}
-            />
-            {/* Max handle visual */}
-            <div
-              className="absolute top-1/2 w-4 h-4 -translate-y-1/2 -translate-x-1/2 bg-blue-600 rounded-full border-2 border-white shadow-md pointer-events-none"
-              style={{ left: `${(priceRange[1] / 1000) * 100}%`, zIndex: 6 }}
-            />
-          </div>
+          <DualRangeSlider value={priceRange} onChange={setPriceRange} />
 
           {/* Number inputs for precise entry */}
           <div className="flex items-center gap-2 mt-4">
