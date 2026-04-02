@@ -261,6 +261,8 @@ export const api = {
     request(`/admin/users/${id}/approve`, { method: 'PUT' }),
   adminGetOnlineUsers: () =>
     request('/admin/online-users'),
+  adminMigrateBuildingIds: () =>
+    request('/admin/migrate/building-ids', { method: 'POST' }),
   adminGetBuildings: () =>
     request('/admin/buildings'),
   adminAddBuilding: (body: { name: string; address: string }) =>

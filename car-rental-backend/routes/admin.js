@@ -466,4 +466,39 @@ router.post('/admin/promote', authenticate, async (req, res) => {
   }
 });
 
+// POST /api/admin/migrate/building-ids — backfill buildingId on existing cars + users
+router.post('/admin/migrate/building-ids', authenticate, adminOnly, async (req, res) => {
+  try {
+    // 1. Fill missing buildingId on users that have a building name but no ID
+    const buildings = await Building.find({});
+    const buildingMap = {}; // name → _id string
+    buildings.forEach(b => { buildingMap[b.name.toLowerCase()] = b._id.toString(); });
+
+    const usersWithoutId = await User.find({ building: { $ne: '' }, buildingId: '' });
+    let userFixed = 0;
+    for (const user of usersWithoutId) {
+      const id = buildingMap[user.building.toLowerCase()];
+      if (id) { user.buildingId = id; await user.save(); userFixed++; }
+    }
+
+    // 2. Fill missing buildingId on cars from their host's profile
+    const cars = await Car.find({ buildingId: '' });
+    let carFixed = 0;
+    for (const car of cars) {
+      const host = await User.findById(car.userId).select('building buildingId');
+      if (host?.buildingId) {
+        car.buildingId = host.buildingId;
+        car.building   = host.building;
+        await car.save();
+        carFixed++;
+      }
+    }
+
+    res.json({ message: 'Migration complete', userFixed, carFixed });
+  } catch (err) {
+    console.error('Migration error:', err);
+    res.status(500).json({ message: 'Migration failed', error: err.message });
+  }
+});
+
 module.exports = router;
