@@ -27,6 +27,9 @@ interface DiscountToggle {
   enabled: boolean;
 }
 
+type DaySchedule = { enabled: boolean; start: string; end: string };
+type WeekSchedule = Record<string, DaySchedule>;
+
 const FUEL_POLICY_OPTIONS = [
   'Return at same level',
   'Return full tank',
@@ -43,10 +46,72 @@ const ALL_RULE_LABELS: Record<string, string> = {
 };
 
 const DAYS = [
-  { id: 'sun', label: 'S' }, { id: 'mon', label: 'M' }, { id: 'tue', label: 'T' },
-  { id: 'wed', label: 'W' }, { id: 'thu', label: 'T' }, { id: 'fri', label: 'F' },
-  { id: 'sat', label: 'S' },
+  { id: 'sun', label: 'Sun', full: 'Sunday' },
+  { id: 'mon', label: 'Mon', full: 'Monday' },
+  { id: 'tue', label: 'Tue', full: 'Tuesday' },
+  { id: 'wed', label: 'Wed', full: 'Wednesday' },
+  { id: 'thu', label: 'Thu', full: 'Thursday' },
+  { id: 'fri', label: 'Fri', full: 'Friday' },
+  { id: 'sat', label: 'Sat', full: 'Saturday' },
 ];
+
+const DEFAULT_SCHEDULE: WeekSchedule = {
+  sun: { enabled: false, start: '08:00', end: '20:00' },
+  mon: { enabled: true,  start: '07:00', end: '21:00' },
+  tue: { enabled: true,  start: '07:00', end: '21:00' },
+  wed: { enabled: true,  start: '07:00', end: '21:00' },
+  thu: { enabled: true,  start: '07:00', end: '21:00' },
+  fri: { enabled: true,  start: '07:00', end: '21:00' },
+  sat: { enabled: false, start: '08:00', end: '20:00' },
+};
+
+const PRESETS = [
+  {
+    label: 'Work week',
+    description: 'Mon–Fri, 9 am–5 pm',
+    apply: (): WeekSchedule => ({
+      sun: { enabled: false, start: '09:00', end: '17:00' },
+      mon: { enabled: true,  start: '09:00', end: '17:00' },
+      tue: { enabled: true,  start: '09:00', end: '17:00' },
+      wed: { enabled: true,  start: '09:00', end: '17:00' },
+      thu: { enabled: true,  start: '09:00', end: '17:00' },
+      fri: { enabled: true,  start: '09:00', end: '17:00' },
+      sat: { enabled: false, start: '09:00', end: '17:00' },
+    }),
+  },
+  {
+    label: 'Weekends',
+    description: 'Sat & Sun, all day',
+    apply: (): WeekSchedule => ({
+      sun: { enabled: true,  start: '07:00', end: '22:00' },
+      mon: { enabled: false, start: '07:00', end: '22:00' },
+      tue: { enabled: false, start: '07:00', end: '22:00' },
+      wed: { enabled: false, start: '07:00', end: '22:00' },
+      thu: { enabled: false, start: '07:00', end: '22:00' },
+      fri: { enabled: false, start: '07:00', end: '22:00' },
+      sat: { enabled: true,  start: '07:00', end: '22:00' },
+    }),
+  },
+  {
+    label: 'Every day',
+    description: 'Full week, all day',
+    apply: (): WeekSchedule =>
+      Object.fromEntries(DAYS.map(d => [d.id, { enabled: true, start: '07:00', end: '22:00' }])),
+  },
+  {
+    label: 'Custom',
+    description: 'Set per day below',
+    apply: null,
+  },
+];
+
+function formatTime(t: string) {
+  if (!t) return '';
+  const [h, m] = t.split(':').map(Number);
+  const ampm = h < 12 ? 'am' : 'pm';
+  const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hr}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
 
 export default function ListPricingPage() {
   const router = useRouter();
@@ -54,6 +119,7 @@ export default function ListPricingPage() {
   const [dailyPrice, setDailyPrice] = useState('65');
   const [hourlyPrice, setHourlyPrice] = useState('15');
   const [isEditing, setIsEditing] = useState(false);
+  const [activePreset, setActivePreset] = useState<string | null>('Work week');
 
   const [discounts, setDiscounts] = useState<DiscountToggle[]>([
     { id: 'weekly', label: 'Weekly Discount', description: '10% off for 7+ days', enabled: true },
@@ -70,11 +136,9 @@ export default function ListPricingPage() {
   const [fuelPolicy, setFuelPolicy] = useState('Return at same level');
   const [distanceLimit, setDistanceLimit] = useState('150');
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi');
-  const [weeklySchedule, setWeeklySchedule] = useState<Record<string, boolean>>(
-    { sun: false, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false }
+  const [schedule, setSchedule] = useState<WeekSchedule>(
+    PRESETS[0].apply!()
   );
-  const [hoursStart, setHoursStart] = useState('07:00');
-  const [hoursEnd, setHoursEnd] = useState('21:00');
 
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
@@ -83,9 +147,10 @@ export default function ListPricingPage() {
     if (saved.pricehr) setHourlyPrice(String(saved.pricehr));
     if (saved.fuelPolicy) setFuelPolicy(saved.fuelPolicy);
     if (saved.dailyDistanceLimit) setDistanceLimit(String(saved.dailyDistanceLimit));
-    if (saved.weeklySchedule) setWeeklySchedule(saved.weeklySchedule);
-    if (saved.availableHoursStart) setHoursStart(saved.availableHoursStart);
-    if (saved.availableHoursEnd) setHoursEnd(saved.availableHoursEnd);
+    if (saved.schedule) {
+      setSchedule(saved.schedule);
+      setActivePreset('Custom');
+    }
     if (saved.rules && Array.isArray(saved.rules)) {
       setRules(ALL_RULE_IDS.map(id => ({
         id,
@@ -94,6 +159,25 @@ export default function ListPricingPage() {
       })));
     }
   }, []);
+
+  function applyPreset(preset: typeof PRESETS[number]) {
+    if (preset.apply) {
+      setSchedule(preset.apply());
+      setActivePreset(preset.label);
+    } else {
+      setActivePreset('Custom');
+    }
+  }
+
+  function toggleDay(id: string) {
+    setSchedule(prev => ({ ...prev, [id]: { ...prev[id], enabled: !prev[id].enabled } }));
+    setActivePreset('Custom');
+  }
+
+  function setDayTime(id: string, field: 'start' | 'end', value: string) {
+    setSchedule(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+    setActivePreset('Custom');
+  }
 
   function toggleDiscount(id: string) {
     setDiscounts(prev => prev.map(d => d.id === id ? { ...d, enabled: !d.enabled } : d));
@@ -106,6 +190,10 @@ export default function ListPricingPage() {
   function handleContinue() {
     const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
     const selectedRules = rules.filter(r => r.selected).map(r => r.label);
+    // Flatten to legacy format for backend compatibility
+    const enabledDays = Object.entries(schedule).filter(([, v]) => v.enabled);
+    const legacySchedule = Object.fromEntries(DAYS.map(d => [d.id, schedule[d.id].enabled]));
+    const firstEnabled = enabledDays[0]?.[1];
     localStorage.setItem('garkar_list_car', JSON.stringify({
       ...saved,
       price: parseFloat(dailyPrice) || 65,
@@ -113,26 +201,23 @@ export default function ListPricingPage() {
       fuelPolicy,
       dailyDistanceLimit: parseInt(distanceLimit) || 200,
       rules: selectedRules,
-      weeklySchedule,
-      availableHoursStart: hoursStart,
-      availableHoursEnd: hoursEnd,
+      schedule,
+      weeklySchedule: legacySchedule,
+      availableHoursStart: firstEnabled?.start ?? '07:00',
+      availableHoursEnd: firstEnabled?.end ?? '21:00',
     }));
     router.push('/host/list/standards');
   }
 
-  // Earnings estimate — different for hourly vs daily
-  const activeDaysPerWeek = Object.values(weeklySchedule).filter(Boolean).length;
-  const estDaysPerMonth = Math.round(activeDaysPerWeek * 4.3 * 0.6); // ~60% occupancy
+  const activeDaysPerWeek = Object.values(schedule).filter(d => d.enabled).length;
+  const estDaysPerMonth = Math.round(activeDaysPerWeek * 4.3 * 0.6);
 
   const hourlyRate = parseFloat(hourlyPrice) || 0;
   const dailyRate  = parseFloat(dailyPrice)  || 0;
 
-  // Hourly: avg 3-hr trip, ~1.5 trips on days the car is rented
-  const estHourlyPerDay  = Math.round(hourlyRate * 3 * 1.5 * 0.8);  // net after 20% fee
+  const estHourlyPerDay  = Math.round(hourlyRate * 3 * 1.5 * 0.8);
   const estHourlyMonthly = Math.round(estHourlyPerDay * estDaysPerMonth);
-
-  // Daily: straightforward days × rate
-  const estDailyMonthly = Math.round(dailyRate * estDaysPerMonth * 0.8);
+  const estDailyMonthly  = Math.round(dailyRate * estDaysPerMonth * 0.8);
 
   return (
     <AppLayout>
@@ -167,7 +252,7 @@ export default function ListPricingPage() {
 
       <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">Pricing &amp; Schedule</h1>
+          <h1 className="text-3xl font-bold text-gray-900">Pricing & Schedule</h1>
           <p className="text-gray-500 mt-1.5 text-sm">
             Set your rate and when your car is available to rent.
           </p>
@@ -181,7 +266,7 @@ export default function ListPricingPage() {
               <h2 className="text-base font-semibold text-gray-900 mb-4">Set Your Rate</h2>
 
               <div className="flex border border-gray-200 rounded-lg p-1 mb-5 w-fit">
-                {(['hourly', 'daily'] as PriceTab[]).map((tab) => (  // hourly first
+                {(['hourly', 'daily'] as PriceTab[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setPriceTab(tab)}
@@ -206,7 +291,7 @@ export default function ListPricingPage() {
                     onChange={(e) =>
                       priceTab === 'daily' ? setDailyPrice(e.target.value) : setHourlyPrice(e.target.value)
                     }
-                    className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
@@ -216,7 +301,6 @@ export default function ListPricingPage() {
                 </p>
               </div>
 
-              {/* Recommended Price */}
               <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
@@ -238,7 +322,7 @@ export default function ListPricingPage() {
 
             {/* Discounts */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Discounts &amp; Duration</h2>
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Discounts & Duration</h2>
               <div className="space-y-4">
                 {discounts.map((discount) => (
                   <div key={discount.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-0">
@@ -270,49 +354,87 @@ export default function ListPricingPage() {
                 <h2 className="text-base font-semibold text-gray-900">When is it available?</h2>
               </div>
               <p className="text-sm text-gray-500 mb-5">
-                Most hosts enable Mon–Fri when their car sits in the garage during the work week.
+                Set different hours per day — most hosts list Mon–Fri while their car sits in the garage.
               </p>
 
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Days of the week</p>
-              <div className="flex gap-1.5 mb-5">
-                {DAYS.map((d) => (
+              {/* Presets */}
+              <div className="grid grid-cols-4 gap-2 mb-6">
+                {PRESETS.map((preset) => (
                   <button
-                    key={d.id}
-                    onClick={() => setWeeklySchedule(prev => ({ ...prev, [d.id]: !prev[d.id] }))}
-                    className={`w-9 h-9 rounded-full text-sm font-semibold transition-colors ${
-                      weeklySchedule[d.id]
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-400 hover:bg-gray-200'
+                    key={preset.label}
+                    onClick={() => applyPreset(preset)}
+                    className={`rounded-xl border px-3 py-2.5 text-left transition-colors ${
+                      activePreset === preset.label
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                     }`}
                   >
-                    {d.label}
+                    <p className={`text-xs font-semibold ${activePreset === preset.label ? 'text-blue-700' : 'text-gray-800'}`}>
+                      {preset.label}
+                    </p>
+                    <p className="text-xs text-gray-400 mt-0.5">{preset.description}</p>
                   </button>
                 ))}
               </div>
 
-              <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Available hours</p>
-              <div className="flex items-center gap-3">
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">From</label>
-                  <input
-                    type="time"
-                    value={hoursStart}
-                    onChange={(e) => setHoursStart(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-                <span className="text-gray-400 mt-4">–</span>
-                <div>
-                  <label className="text-xs text-gray-400 block mb-1">To</label>
-                  <input
-                    type="time"
-                    value={hoursEnd}
-                    onChange={(e) => setHoursEnd(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
+              {/* Per-day schedule */}
+              <div className="space-y-2">
+                {DAYS.map((day) => {
+                  const d = schedule[day.id];
+                  return (
+                    <div
+                      key={day.id}
+                      className={`flex items-center gap-4 rounded-xl px-4 py-3 border transition-colors ${
+                        d.enabled ? 'border-blue-200 bg-blue-50/40' : 'border-gray-100 bg-gray-50'
+                      }`}
+                    >
+                      {/* Toggle */}
+                      <button
+                        onClick={() => toggleDay(day.id)}
+                        className={`relative w-10 h-5 rounded-full flex-shrink-0 transition-colors focus:outline-none ${
+                          d.enabled ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                        role="switch"
+                        aria-checked={d.enabled}
+                      >
+                        <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${
+                          d.enabled ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+
+                      {/* Day name */}
+                      <span className={`w-10 text-sm font-semibold flex-shrink-0 ${d.enabled ? 'text-gray-900' : 'text-gray-400'}`}>
+                        {day.label}
+                      </span>
+
+                      {d.enabled ? (
+                        <div className="flex items-center gap-2 flex-1">
+                          <input
+                            type="time"
+                            value={d.start}
+                            onChange={(e) => setDayTime(day.id, 'start', e.target.value)}
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          />
+                          <span className="text-gray-400 text-sm">–</span>
+                          <input
+                            type="time"
+                            value={d.end}
+                            onChange={(e) => setDayTime(day.id, 'end', e.target.value)}
+                            className="border border-gray-300 rounded-lg px-2 py-1.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                          />
+                          <span className="text-xs text-blue-600 font-medium ml-1">
+                            {formatTime(d.start)} – {formatTime(d.end)}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-sm text-gray-400 flex-1">Unavailable</span>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
-              <p className="text-xs text-gray-400 mt-2">
+
+              <p className="text-xs text-gray-400 mt-3">
                 You can block specific dates anytime from your host dashboard after publishing.
               </p>
             </div>
@@ -329,7 +451,7 @@ export default function ListPricingPage() {
                 onClick={handleContinue}
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                {isEditing ? 'Review &amp; Save' : 'Next: Safety Standards'}
+                {isEditing ? 'Review & Save' : 'Next: Safety Standards'}
                 <ChevronRight className="w-4 h-4" />
               </button>
             </div>
@@ -421,7 +543,7 @@ export default function ListPricingPage() {
                   <select
                     value={fuelPolicy}
                     onChange={(e) => setFuelPolicy(e.target.value)}
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                   >
                     {FUEL_POLICY_OPTIONS.map((opt) => (
                       <option key={opt} value={opt}>{opt}</option>
@@ -439,7 +561,7 @@ export default function ListPricingPage() {
                     type="number"
                     value={distanceLimit}
                     onChange={(e) => setDistanceLimit(e.target.value)}
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <span className="text-sm text-gray-500">{distanceUnit === 'km' ? 'km/day' : 'mi/day'}</span>
                   <button
