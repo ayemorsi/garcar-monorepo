@@ -12,9 +12,13 @@ import {
   ChevronRight,
   Calendar,
   Users,
+  Building2,
+  CheckCircle,
+  MapPin,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
+import { getAuth } from '@/lib/auth';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -28,6 +32,13 @@ interface CarItem {
   price: number;
   available: boolean;
   images?: string[];
+}
+
+interface UserProfile {
+  building?: string;
+  buildingId?: string;
+  firstName?: string;
+  isVerified?: boolean;
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -336,6 +347,14 @@ function BrowsePageContent({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+
+  useEffect(() => {
+    const { userId } = getAuth();
+    if (userId) {
+      api.getMe().then((u) => setUserProfile(u as UserProfile)).catch(() => {});
+    }
+  }, []);
 
   // Always keep a ref to the latest fetchCars so effects never capture stale state
   const fetchCarsRef = useRef<() => void>(() => {});
@@ -428,6 +447,42 @@ function BrowsePageContent({
         </div>
       </div>
 
+      {/* Building identity banner */}
+      {userProfile?.building ? (
+        <div className="bg-blue-600 text-white">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center flex-shrink-0">
+                <Building2 className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-bold text-base leading-tight">{userProfile.building}</p>
+                  <span className="flex items-center gap-1 bg-white/20 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    <CheckCircle className="w-3 h-3" />
+                    Your Building
+                  </span>
+                </div>
+                <p className="text-blue-100 text-xs mt-0.5 flex items-center gap-1">
+                  <MapPin className="w-3 h-3" />
+                  Showing only cars available in your community
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+                <p className="text-xl font-bold leading-none">{loading ? '—' : cars.filter(c => c.available).length}</p>
+                <p className="text-blue-100 text-xs mt-0.5">cars available</p>
+              </div>
+              <div className="bg-white/15 rounded-xl px-4 py-2 text-center">
+                <p className="text-xl font-bold leading-none">{loading ? '—' : cars.length}</p>
+                <p className="text-blue-100 text-xs mt-0.5">total listed</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {/* Main content */}
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
         {/* Mobile filter toggle */}
@@ -470,12 +525,14 @@ function BrowsePageContent({
             {/* Header row */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Available Cars</h1>
+                <h1 className="text-xl font-bold text-gray-900">
+                  {userProfile?.building ? `Cars at ${userProfile.building}` : 'Available Cars'}
+                </h1>
                 <p className="text-sm text-gray-500 mt-0.5">
                   {loading ? 'Loading...' : (
                     dateFrom && dateTo
                       ? `${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''} available ${new Date(dateFrom).toLocaleDateString('en-US',{month:'short',day:'numeric'})}–${new Date(dateTo).toLocaleDateString('en-US',{month:'short',day:'numeric'})}`
-                      : `Showing ${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''}`
+                      : `${filteredCars.length} car${filteredCars.length !== 1 ? 's' : ''} in your building`
                   )}
                 </p>
               </div>
@@ -524,7 +581,16 @@ function BrowsePageContent({
               <div className="flex flex-col items-center justify-center py-20 text-gray-400">
                 <Car className="w-16 h-16 mb-4 text-gray-200" />
                 <p className="text-lg font-medium text-gray-500">No cars found</p>
-                <p className="text-sm mt-1">Try adjusting your filters or search term.</p>
+                <p className="text-sm mt-1 text-center">
+                  {userProfile?.building
+                    ? `No cars listed at ${userProfile.building} yet. Be the first to list yours!`
+                    : 'Try adjusting your filters or search term.'}
+                </p>
+                {userProfile?.building && (
+                  <Link href="/host/list" className="mt-4 bg-blue-600 text-white text-sm font-semibold px-5 py-2.5 rounded-lg hover:bg-blue-700 transition-colors">
+                    List Your Car
+                  </Link>
+                )}
               </div>
             )}
 
