@@ -31,6 +31,8 @@ const carSchema = new mongoose.Schema({
   availableHoursStart: { type: String, default: '07:00' },
   availableHoursEnd:   { type: String, default: '21:00' },
   blockedDates: [{ type: String }], // 'YYYY-MM-DD' strings
+  building:   { type: String, default: '' },   // display name
+  buildingId: { type: String, default: '' },   // reference to Building._id
   userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   createdAt: { type: Date, default: Date.now }
 });

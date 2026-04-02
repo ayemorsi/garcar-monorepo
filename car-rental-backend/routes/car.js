@@ -1,6 +1,7 @@
 const express = require('express');
 const Car = require('../models/Car');
 const Booking = require('../models/Booking');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const router = express.Router();
 
@@ -32,11 +33,16 @@ router.post('/cars', authenticate, async (req, res) => {
       weeklySchedule, availableHoursStart, availableHoursEnd,
     } = req.body;
 
+    // Pull building info from the host's profile
+    const host = await User.findById(req.userId).select('building buildingId');
+
     const car = new Car({
       make, model, year, licensePlate, state, trim, type, seats,
       transmission, price, pricehr, description, rules, fuelPolicy,
       dailyDistanceLimit, images, available,
       weeklySchedule, availableHoursStart, availableHoursEnd,
+      building:   host?.building   || '',
+      buildingId: host?.buildingId || '',
       userId: req.userId,
     });
 
@@ -64,6 +70,17 @@ router.get('/cars', async (req, res) => {
   try {
     const { type, minPrice, maxPrice, search, startDate, endDate } = req.query;
     const filter = {};
+
+    // Filter by the requester's building if they are logged in
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      try {
+        const { jwtSecret } = require('../config');
+        const decoded = jwt.verify(authHeader.split(' ')[1], jwtSecret);
+        const viewer = await User.findById(decoded.userId).select('buildingId');
+        if (viewer?.buildingId) filter.buildingId = viewer.buildingId;
+      } catch { /* unauthenticated or bad token — show all */ }
+    }
 
     if (type) filter.type = type;
     if (minPrice || maxPrice) {
