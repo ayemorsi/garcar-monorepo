@@ -1,17 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
   ChevronDown,
   Info,
-  Rocket,
   Zap,
   Clock,
+  TrendingUp,
+  ChevronRight,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
-import { api } from '@/lib/api';
 
 type PriceTab = 'hourly' | 'daily';
 
@@ -43,13 +42,18 @@ const ALL_RULE_LABELS: Record<string, string> = {
   'child-seats': 'Child Seats',
 };
 
+const DAYS = [
+  { id: 'sun', label: 'S' }, { id: 'mon', label: 'M' }, { id: 'tue', label: 'T' },
+  { id: 'wed', label: 'W' }, { id: 'thu', label: 'T' }, { id: 'fri', label: 'F' },
+  { id: 'sat', label: 'S' },
+];
+
 export default function ListPricingPage() {
   const router = useRouter();
-  const [publishing, setPublishing] = useState(false);
-  const [publishError, setPublishError] = useState('');
   const [priceTab, setPriceTab] = useState<PriceTab>('daily');
   const [dailyPrice, setDailyPrice] = useState('65');
   const [hourlyPrice, setHourlyPrice] = useState('15');
+  const [isEditing, setIsEditing] = useState(false);
 
   const [discounts, setDiscounts] = useState<DiscountToggle[]>([
     { id: 'weekly', label: 'Weekly Discount', description: '10% off for 7+ days', enabled: true },
@@ -66,20 +70,12 @@ export default function ListPricingPage() {
   const [fuelPolicy, setFuelPolicy] = useState('Return at same level');
   const [distanceLimit, setDistanceLimit] = useState('200');
   const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('km');
-
-  const DAYS = [
-    { id: 'sun', label: 'S' }, { id: 'mon', label: 'M' }, { id: 'tue', label: 'T' },
-    { id: 'wed', label: 'W' }, { id: 'thu', label: 'T' }, { id: 'fri', label: 'F' },
-    { id: 'sat', label: 'S' },
-  ];
   const [weeklySchedule, setWeeklySchedule] = useState<Record<string, boolean>>(
     { sun: false, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false }
   );
   const [hoursStart, setHoursStart] = useState('07:00');
   const [hoursEnd, setHoursEnd] = useState('21:00');
-  const [isEditing, setIsEditing] = useState(false);
 
-  // Pre-fill from localStorage when editing
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
     if (saved.carId) setIsEditing(true);
@@ -100,57 +96,90 @@ export default function ListPricingPage() {
   }, []);
 
   function toggleDiscount(id: string) {
-    setDiscounts((prev) =>
-      prev.map((d) => (d.id === id ? { ...d, enabled: !d.enabled } : d))
-    );
+    setDiscounts(prev => prev.map(d => d.id === id ? { ...d, enabled: !d.enabled } : d));
   }
 
   function toggleRule(id: string) {
-    setRules((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, selected: !r.selected } : r))
-    );
+    setRules(prev => prev.map(r => r.id === id ? { ...r, selected: !r.selected } : r));
   }
 
-  function applyPriceSuggestion() {
-    setDailyPrice('72');
+  function handleContinue() {
+    const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
+    const selectedRules = rules.filter(r => r.selected).map(r => r.label);
+    localStorage.setItem('garkar_list_car', JSON.stringify({
+      ...saved,
+      price: parseFloat(dailyPrice) || 65,
+      pricehr: parseFloat(hourlyPrice) || 0,
+      fuelPolicy,
+      dailyDistanceLimit: parseInt(distanceLimit) || 200,
+      rules: selectedRules,
+      weeklySchedule,
+      availableHoursStart: hoursStart,
+      availableHoursEnd: hoursEnd,
+    }));
+    router.push('/host/list/standards');
   }
+
+  // Earnings estimate
+  const activeDaysPerWeek = Object.values(weeklySchedule).filter(Boolean).length;
+  const estDaysPerMonth = Math.round(activeDaysPerWeek * 4.3 * 0.6); // ~60% occupancy
+  const price = parseFloat(dailyPrice) || 0;
+  const estGross = price * estDaysPerMonth;
+  const estNet = Math.round(estGross * 0.8); // ~20% platform
 
   return (
     <AppLayout>
-      {/* Progress */}
+      {/* Step header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700">Step 3 &amp; 4 of 4: Pricing &amp; Rules</span>
-            <span className="text-sm text-gray-500">75%</span>
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold text-gray-900">
+                {isEditing ? 'Edit listing' : 'Step 3 of 4'}
+              </span>
+              {!isEditing && (
+                <>
+                  <span className="text-gray-300">|</span>
+                  <span className="text-gray-500">Next: Safety Standards</span>
+                  <span className="text-gray-300">|</span>
+                  <button
+                    onClick={() => { localStorage.removeItem('garkar_list_car'); router.push('/host/list'); }}
+                    className="text-blue-600 hover:underline"
+                  >
+                    Start over
+                  </button>
+                </>
+              )}
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '75%' }} />
+          <div className="w-full bg-gray-100 rounded-full h-1.5">
+            <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: '75%' }} />
           </div>
         </div>
       </div>
 
-      {/* Content */}
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Listing Details</h1>
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Pricing &amp; Schedule</h1>
+          <p className="text-gray-500 mt-1.5 text-sm">
+            Set your rate and when your car is available to rent.
+          </p>
+        </div>
 
         <div className="flex gap-8">
           {/* Left Column */}
           <div className="flex-1 space-y-5">
             {/* Set Your Rates */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Set Your Rates</h2>
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Set Your Rate</h2>
 
-              {/* Tabs */}
               <div className="flex border border-gray-200 rounded-lg p-1 mb-5 w-fit">
                 {(['hourly', 'daily'] as PriceTab[]).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setPriceTab(tab)}
                     className={`px-5 py-1.5 text-sm font-medium rounded-md transition-colors capitalize ${
-                      priceTab === tab
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-50'
+                      priceTab === tab ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-50'
                     }`}
                   >
                     {tab}
@@ -158,7 +187,6 @@ export default function ListPricingPage() {
                 ))}
               </div>
 
-              {/* Price Input */}
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {priceTab === 'daily' ? 'Daily Price' : 'Hourly Price'}
@@ -169,9 +197,7 @@ export default function ListPricingPage() {
                     type="number"
                     value={priceTab === 'daily' ? dailyPrice : hourlyPrice}
                     onChange={(e) =>
-                      priceTab === 'daily'
-                        ? setDailyPrice(e.target.value)
-                        : setHourlyPrice(e.target.value)
+                      priceTab === 'daily' ? setDailyPrice(e.target.value) : setHourlyPrice(e.target.value)
                     }
                     className="w-full border border-gray-300 rounded-lg pl-7 pr-4 py-2.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
@@ -193,7 +219,7 @@ export default function ListPricingPage() {
                       Similar cars in your area earn <strong>$60–$85/day</strong>. Your current price is within this range.
                     </p>
                     <button
-                      onClick={applyPriceSuggestion}
+                      onClick={() => setDailyPrice('72')}
                       className="text-sm font-semibold text-blue-600 hover:text-blue-700 mt-2 underline underline-offset-2"
                     >
                       Apply Suggestion
@@ -203,7 +229,7 @@ export default function ListPricingPage() {
               </div>
             </div>
 
-            {/* Discounts & Duration */}
+            {/* Discounts */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
               <h2 className="text-base font-semibold text-gray-900 mb-4">Discounts &amp; Duration</h2>
               <div className="space-y-4">
@@ -221,11 +247,9 @@ export default function ListPricingPage() {
                       aria-checked={discount.enabled}
                       role="switch"
                     >
-                      <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
-                          discount.enabled ? 'translate-x-5' : 'translate-x-0'
-                        }`}
-                      />
+                      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${
+                        discount.enabled ? 'translate-x-5' : 'translate-x-0'
+                      }`} />
                     </button>
                   </div>
                 ))}
@@ -234,12 +258,14 @@ export default function ListPricingPage() {
 
             {/* Availability Schedule */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6">
-              <div className="flex items-center gap-2 mb-4">
+              <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-4 h-4 text-blue-600" />
                 <h2 className="text-base font-semibold text-gray-900">When is it available?</h2>
               </div>
+              <p className="text-sm text-gray-500 mb-5">
+                Most hosts enable Mon–Fri when their car sits in the garage during the work week.
+              </p>
 
-              {/* Day toggles */}
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Days of the week</p>
               <div className="flex gap-1.5 mb-5">
                 {DAYS.map((d) => (
@@ -257,7 +283,6 @@ export default function ListPricingPage() {
                 ))}
               </div>
 
-              {/* Hours */}
               <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Available hours</p>
               <div className="flex items-center gap-3">
                 <div>
@@ -285,73 +310,58 @@ export default function ListPricingPage() {
               </p>
             </div>
 
-            {/* Action Buttons */}
+            {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
-              <Link
-                href="/host/list/photos"
+              <button
+                onClick={() => router.back()}
                 className="px-6 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Back to Details
-              </Link>
-              {publishError && <p className="text-red-600 text-xs">{publishError}</p>}
+                Back
+              </button>
               <button
-                disabled={publishing}
-                onClick={async () => {
-                  try {
-                    setPublishing(true);
-                    setPublishError('');
-                    const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
-                    const selectedRules = rules.filter(r => r.selected).map(r => r.label);
-                    const carPayload = {
-                      make: saved.make || 'Unknown',
-                      model: saved.model || 'Unknown',
-                      year: parseInt(saved.year) || new Date().getFullYear(),
-                      licensePlate: saved.licensePlate || '',
-                      state: saved.state || '',
-                      trim: saved.trim || '',
-                      type: saved.type || 'Gas',
-                      seats: parseInt(saved.seats) || 5,
-                      transmission: saved.transmission || 'Automatic',
-                      price: parseFloat(dailyPrice) || 65,
-                      pricehr: parseFloat(hourlyPrice) || 0,
-                      description: saved.description || '',
-                      rules: selectedRules,
-                      fuelPolicy,
-                      dailyDistanceLimit: parseInt(distanceLimit) || 200,
-                      images: saved.images || [],
-                      available: true,
-                      weeklySchedule,
-                      availableHoursStart: hoursStart,
-                      availableHoursEnd: hoursEnd,
-                    };
-                    if (saved.carId) {
-                      await api.updateCar(saved.carId, carPayload);
-                    } else {
-                      await api.createCar(carPayload);
-                    }
-                    localStorage.removeItem('garkar_list_car');
-                    router.push('/host/cars');
-                  } catch (err: unknown) {
-                    setPublishError(err instanceof Error ? err.message : 'Failed to publish listing');
-                  } finally {
-                    setPublishing(false);
-                  }
-                }}
-                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
+                onClick={handleContinue}
+                className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors"
               >
-                <Rocket className="w-4 h-4" />
-                {publishing ? (isEditing ? 'Saving...' : 'Publishing...') : (isEditing ? 'Save Changes' : 'Publish Listing')}
+                {isEditing ? 'Review &amp; Save' : 'Next: Safety Standards'}
+                <ChevronRight className="w-4 h-4" />
               </button>
             </div>
           </div>
 
           {/* Right Column */}
-          <div className="w-80 flex-shrink-0">
-            {/* Community Rules */}
+          <div className="w-80 flex-shrink-0 space-y-4">
+            {/* Live earnings estimate */}
             <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-4">
-              <h2 className="text-base font-semibold text-gray-900 mb-4">Community Rules</h2>
+              <div className="flex items-center gap-2 mb-4">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <h2 className="text-base font-semibold text-gray-900">Your earnings estimate</h2>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Days available/week</span>
+                  <span className="font-semibold text-gray-900">{activeDaysPerWeek} days</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Est. rental days/mo</span>
+                  <span className="font-semibold text-gray-900">~{estDaysPerMonth} days</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-gray-500">Daily rate</span>
+                  <span className="font-semibold text-gray-900">${price}/day</span>
+                </div>
+                <div className="border-t border-gray-100 pt-3">
+                  <div className="flex justify-between">
+                    <span className="text-sm text-gray-500">Est. monthly earnings</span>
+                    <span className="text-lg font-bold text-green-600">${estNet}</span>
+                  </div>
+                  <p className="text-xs text-gray-400 mt-1">After platform fee, ~60% occupancy</p>
+                </div>
+              </div>
+            </div>
 
-              {/* Rule Buttons 2x2 Grid */}
+            {/* Community Rules */}
+            <div className="bg-white rounded-2xl border border-gray-200 p-6">
+              <h2 className="text-base font-semibold text-gray-900 mb-4">Community Rules</h2>
               <div className="grid grid-cols-2 gap-2 mb-5">
                 {rules.map((rule) => (
                   <button
@@ -390,19 +400,15 @@ export default function ListPricingPage() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1.5">Daily Distance Limit</label>
                 <div className="flex items-center gap-2">
-                  <div className="relative flex-1">
-                    <input
-                      type="number"
-                      value={distanceLimit}
-                      onChange={(e) => setDistanceLimit(e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {distanceUnit === 'km' ? 'km/day' : 'mi/day'}
-                  </span>
+                  <input
+                    type="number"
+                    value={distanceLimit}
+                    onChange={(e) => setDistanceLimit(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-500">{distanceUnit === 'km' ? 'km/day' : 'mi/day'}</span>
                   <button
-                    onClick={() => setDistanceUnit((u) => (u === 'km' ? 'mi' : 'km'))}
+                    onClick={() => setDistanceUnit(u => u === 'km' ? 'mi' : 'km')}
                     className="px-3 py-2.5 text-sm font-semibold border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-gray-700"
                   >
                     {distanceUnit.toUpperCase()}

@@ -28,6 +28,7 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http:/
 
 export default function ListPhotosPage() {
   const router = useRouter();
+  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
@@ -136,37 +137,35 @@ export default function ListPhotosPage() {
 
   return (
     <AppLayout>
-      {/* Breadcrumb */}
-      <div className="bg-white border-b border-gray-100">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
-          <nav className="flex items-center gap-2 text-sm text-gray-500">
-            <Link href="/host/list" className="hover:text-gray-700">Host a Car</Link>
-            <span>/</span>
-            <Link href="/host/list" className="hover:text-gray-700">Car Details</Link>
-            <span>/</span>
-            <span className="text-gray-900 font-medium">Photos</span>
-          </nav>
+      {/* Step header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-semibold text-gray-900">Step 2 of 4</span>
+              <span className="text-gray-300">|</span>
+              <span className="text-gray-500">Next: Pricing &amp; Schedule</span>
+              <span className="text-gray-300">|</span>
+              <button
+                onClick={() => { localStorage.removeItem('garkar_list_car'); router.push('/host/list'); }}
+                className="text-blue-600 hover:underline"
+              >
+                Start over
+              </button>
+            </div>
+          </div>
+          <div className="w-full bg-gray-100 rounded-full h-1.5">
+            <div className="bg-blue-600 h-1.5 rounded-full" style={{ width: '50%' }} />
+          </div>
         </div>
       </div>
 
-      <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header */}
+      <main className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Show off your car</h1>
-          <p className="text-gray-500 mt-1 text-sm">
+          <h1 className="text-3xl font-bold text-gray-900">Show off your car</h1>
+          <p className="text-gray-500 mt-1.5 text-sm">
             Listings with great photos get up to 3x more bookings. Add at least 4 high-quality images.
           </p>
-        </div>
-
-        {/* Progress */}
-        <div className="bg-white rounded-xl border border-gray-200 px-6 py-4 mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-semibold text-gray-700">Step 2 of 4: Photos</span>
-            <span className="text-sm text-gray-500">40%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div className="bg-blue-600 h-2 rounded-full" style={{ width: '40%' }} />
-          </div>
         </div>
 
         <div className="flex gap-8">
@@ -281,12 +280,12 @@ export default function ListPhotosPage() {
 
             {/* Action Buttons */}
             <div className="flex items-center gap-3 pt-4 border-t border-gray-100">
-              <Link
-                href="/host/list"
+              <button
+                onClick={() => router.back()}
                 className="px-6 py-2.5 text-sm font-medium text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
                 Back
-              </Link>
+              </button>
               <button
                 onClick={handleContinue}
                 disabled={uploadingCount > 0}
