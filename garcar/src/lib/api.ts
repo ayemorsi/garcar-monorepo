@@ -80,7 +80,8 @@ async function request<T>(path: string, options: RequestInit = {}, isRetry = fal
       localStorage.removeItem('userId');
       localStorage.removeItem('refreshToken');
       if (typeof window !== 'undefined') {
-        window.location.href = '/auth/login';
+        const next = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.href = `/auth/login?next=${next}`;
       }
       throw new Error('Session expired. Please log in again.');
     }
