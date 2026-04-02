@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Upload, X, GripVertical, Camera, Sun, Maximize, AlignHorizontalJustifyCenter } from 'lucide-react';
@@ -31,6 +31,22 @@ export default function ListPhotosPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
+
+  // Pre-load existing images when editing a car
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
+    if (saved.images && saved.images.length > 0) {
+      const existing: UploadedPhoto[] = (saved.images as string[]).map((url, i) => ({
+        id: `existing-${i}`,
+        name: `Photo ${i + 1}`,
+        previewUrl: url,
+        backendUrl: url,
+        isCover: i === 0,
+        uploading: false,
+      }));
+      setPhotos(existing);
+    }
+  }, []);
 
   async function processFiles(files: File[]) {
     const imageFiles = files.filter((f) => f.type.startsWith('image/'));

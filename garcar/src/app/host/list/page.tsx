@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Shield, FileText, Eye, ChevronDown } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
+import { api } from '@/lib/api';
 
 const STEPS = [
   { label: 'Vehicle Info', step: 1 },
@@ -64,6 +65,9 @@ interface FormData {
 
 export default function ListVehicleInfoPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const carId = searchParams.get('carId');
+
   const [form, setForm] = useState<FormData>({
     licensePlate: '',
     state: '',
@@ -76,6 +80,52 @@ export default function ListVehicleInfoPage() {
     transmission: 'Automatic',
     description: '',
   });
+
+  // Pre-fill form when editing an existing car
+  useEffect(() => {
+    if (!carId) {
+      // New listing — clear any stale edit data
+      localStorage.removeItem('garkar_list_car');
+      return;
+    }
+    api.getCar(carId).then((car) => {
+      const c = car as {
+        make: string; model: string; year: number; licensePlate: string;
+        state: string; trim: string; type: string; seats: number;
+        transmission: string; description: string; price: number;
+        pricehr: number; fuelPolicy: string; dailyDistanceLimit: number;
+        rules: string[]; images: string[];
+        weeklySchedule: Record<string, boolean>;
+        availableHoursStart: string; availableHoursEnd: string;
+      };
+      setForm({
+        licensePlate: c.licensePlate || '',
+        state: c.state || '',
+        make: c.make || '',
+        model: c.model || '',
+        year: String(c.year || ''),
+        trim: c.trim || '',
+        type: c.type || 'Gas',
+        seats: String(c.seats || '5'),
+        transmission: c.transmission || 'Automatic',
+        description: c.description || '',
+      });
+      // Persist full car data (including pricing/images) for later steps
+      localStorage.setItem('garkar_list_car', JSON.stringify({
+        carId,
+        make: c.make, model: c.model, year: String(c.year),
+        licensePlate: c.licensePlate, state: c.state, trim: c.trim,
+        type: c.type, seats: String(c.seats), transmission: c.transmission,
+        description: c.description,
+        price: c.price, pricehr: c.pricehr,
+        fuelPolicy: c.fuelPolicy, dailyDistanceLimit: c.dailyDistanceLimit,
+        rules: c.rules, images: c.images,
+        weeklySchedule: c.weeklySchedule,
+        availableHoursStart: c.availableHoursStart,
+        availableHoursEnd: c.availableHoursEnd,
+      }));
+    }).catch(() => {/* keep defaults */});
+  }, [carId]);
 
   function handleChange(field: keyof FormData, value: string) {
     setForm((prev) => {

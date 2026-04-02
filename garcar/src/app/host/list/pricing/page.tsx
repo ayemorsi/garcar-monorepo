@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
@@ -34,6 +34,14 @@ const FUEL_POLICY_OPTIONS = [
   'Prepaid fuel included',
   'No fuel policy',
 ];
+
+const ALL_RULE_IDS = ['no-smoking', 'pet-friendly', 'clean-car', 'child-seats'];
+const ALL_RULE_LABELS: Record<string, string> = {
+  'no-smoking': 'No Smoking',
+  'pet-friendly': 'Pet Friendly',
+  'clean-car': 'Clean Car',
+  'child-seats': 'Child Seats',
+};
 
 export default function ListPricingPage() {
   const router = useRouter();
@@ -69,6 +77,27 @@ export default function ListPricingPage() {
   );
   const [hoursStart, setHoursStart] = useState('07:00');
   const [hoursEnd, setHoursEnd] = useState('21:00');
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Pre-fill from localStorage when editing
+  useEffect(() => {
+    const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
+    if (saved.carId) setIsEditing(true);
+    if (saved.price) setDailyPrice(String(saved.price));
+    if (saved.pricehr) setHourlyPrice(String(saved.pricehr));
+    if (saved.fuelPolicy) setFuelPolicy(saved.fuelPolicy);
+    if (saved.dailyDistanceLimit) setDistanceLimit(String(saved.dailyDistanceLimit));
+    if (saved.weeklySchedule) setWeeklySchedule(saved.weeklySchedule);
+    if (saved.availableHoursStart) setHoursStart(saved.availableHoursStart);
+    if (saved.availableHoursEnd) setHoursEnd(saved.availableHoursEnd);
+    if (saved.rules && Array.isArray(saved.rules)) {
+      setRules(ALL_RULE_IDS.map(id => ({
+        id,
+        label: ALL_RULE_LABELS[id],
+        selected: (saved.rules as string[]).includes(ALL_RULE_LABELS[id]),
+      })));
+    }
+  }, []);
 
   function toggleDiscount(id: string) {
     setDiscounts((prev) =>
@@ -273,7 +302,7 @@ export default function ListPricingPage() {
                     setPublishError('');
                     const saved = JSON.parse(localStorage.getItem('garkar_list_car') || '{}');
                     const selectedRules = rules.filter(r => r.selected).map(r => r.label);
-                    await api.createCar({
+                    const carPayload = {
                       make: saved.make || 'Unknown',
                       model: saved.model || 'Unknown',
                       year: parseInt(saved.year) || new Date().getFullYear(),
@@ -294,7 +323,12 @@ export default function ListPricingPage() {
                       weeklySchedule,
                       availableHoursStart: hoursStart,
                       availableHoursEnd: hoursEnd,
-                    });
+                    };
+                    if (saved.carId) {
+                      await api.updateCar(saved.carId, carPayload);
+                    } else {
+                      await api.createCar(carPayload);
+                    }
                     localStorage.removeItem('garkar_list_car');
                     router.push('/host/cars');
                   } catch (err: unknown) {
@@ -306,7 +340,7 @@ export default function ListPricingPage() {
                 className="inline-flex items-center gap-2 px-6 py-2.5 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
               >
                 <Rocket className="w-4 h-4" />
-                {publishing ? 'Publishing...' : 'Publish Listing'}
+                {publishing ? (isEditing ? 'Saving...' : 'Publishing...') : (isEditing ? 'Save Changes' : 'Publish Listing')}
               </button>
             </div>
           </div>
