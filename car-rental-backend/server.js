@@ -43,8 +43,12 @@ const authLimiter = rateLimit(10, 15 * 60 * 1000); // 10 per 15 minutes
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow server-to-server (no origin) and listed origins
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    // Allow server-to-server (no origin), listed origins, and all vercel.app previews
+    if (
+      !origin ||
+      allowedOrigins.some(o => origin.startsWith(o)) ||
+      origin.endsWith('.vercel.app')
+    ) {
       callback(null, true);
     } else {
       callback(new Error('CORS: origin not allowed'));
