@@ -29,12 +29,14 @@ router.post('/cars', authenticate, async (req, res) => {
       make, model, year, licensePlate, state, trim, type, seats,
       transmission, price, pricehr, description, rules, fuelPolicy,
       dailyDistanceLimit, images, available,
+      weeklySchedule, availableHoursStart, availableHoursEnd,
     } = req.body;
 
     const car = new Car({
       make, model, year, licensePlate, state, trim, type, seats,
       transmission, price, pricehr, description, rules, fuelPolicy,
       dailyDistanceLimit, images, available,
+      weeklySchedule, availableHoursStart, availableHoursEnd,
       userId: req.userId,
     });
 
@@ -151,6 +153,7 @@ router.put('/cars/:id', authenticate, async (req, res) => {
       make, model, year, licensePlate, state, trim, type, seats,
       transmission, price, pricehr, description, rules, fuelPolicy,
       dailyDistanceLimit, images, available,
+      weeklySchedule, availableHoursStart, availableHoursEnd,
     } = req.body;
 
     const car = await Car.findOneAndUpdate(
@@ -159,6 +162,9 @@ router.put('/cars/:id', authenticate, async (req, res) => {
         make, model, year, licensePlate, state, trim, type, seats,
         transmission, price, pricehr, description, rules, fuelPolicy,
         dailyDistanceLimit, images, available,
+        ...(weeklySchedule     && { weeklySchedule }),
+        ...(availableHoursStart && { availableHoursStart }),
+        ...(availableHoursEnd   && { availableHoursEnd }),
       },
       { new: true }
     );
