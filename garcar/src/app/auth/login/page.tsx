@@ -17,12 +17,21 @@ function LoginForm() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    // Read directly from the form DOM so browser-autofilled values are captured
+    // even when the React controlled state wasn't updated by an onChange event.
+    const fd = new FormData(e.currentTarget);
+    const username = (fd.get('username') as string) || form.email;
+    const password = (fd.get('password') as string) || form.password;
+    if (!username || !password) {
+      setError('Please enter your username and password.');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      const data = await api.login({ username: form.email, password: form.password });
+      const data = await api.login({ username, password });
       saveAuth(data.token, data.userId);
       if (data.refreshToken) saveRefreshToken(data.refreshToken);
 
@@ -63,6 +72,8 @@ function LoginForm() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
               <input
                 type="text"
+                name="username"
+                autoComplete="username"
                 placeholder="your username"
                 value={form.email}
                 onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
@@ -80,6 +91,8 @@ function LoginForm() {
               </div>
               <input
                 type="password"
+                name="password"
+                autoComplete="current-password"
                 value={form.password}
                 onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
                 required

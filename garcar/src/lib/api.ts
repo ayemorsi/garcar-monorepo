@@ -68,8 +68,9 @@ async function request<T>(path: string, options: RequestInit = {}, isRetry = fal
 
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers });
 
-  // Auto-refresh on 401 (but not on the refresh endpoint itself or on retry)
-  if (res.status === 401 && !isRetry && path !== '/auth/refresh') {
+  // Auto-refresh on 401 (but not on auth endpoints or on retry)
+  const noRefreshPaths = ['/auth/refresh', '/login', '/register'];
+  if (res.status === 401 && !isRetry && !noRefreshPaths.includes(path)) {
     try {
       await attemptTokenRefresh();
       return request<T>(path, options, true);
