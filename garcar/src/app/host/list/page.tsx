@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ChevronDown, TrendingUp, DollarSign, CalendarCheck, Users, Shield } from 'lucide-react';
@@ -58,7 +58,7 @@ interface FormData {
 
 const STEPS = ['Vehicle Info', 'Photos', 'Pricing & Schedule', 'Safety Standards'];
 
-export default function ListVehicleInfoPage() {
+function ListVehicleInfoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const carId = searchParams.get('carId');
@@ -455,5 +455,13 @@ export default function ListVehicleInfoPage() {
         </div>
       </main>
     </AppLayout>
+  );
+}
+
+export default function ListVehicleInfoPageWrapper() {
+  return (
+    <Suspense>
+      <ListVehicleInfoPage />
+    </Suspense>
   );
 }
