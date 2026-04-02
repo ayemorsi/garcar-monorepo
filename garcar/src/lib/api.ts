@@ -99,7 +99,7 @@ async function request<T>(path: string, options: RequestInit = {}, isRetry = fal
 }
 
 export const api = {
-  register: (body: { username: string; password: string; building?: string; firstName?: string; lastName?: string }) =>
+  register: (body: { username: string; password: string; building?: string; buildingId?: string; firstName?: string; lastName?: string }) =>
     request('/register', { method: 'POST', body: JSON.stringify(body) }),
 
   /** Returns the raw token plus decoded userId and isVerified. */
@@ -117,19 +117,12 @@ export const api = {
     };
   },
 
-  /** Returns a fresh token with isVerified:true after document upload. */
-  submitVerification: async (userId: string, formData: FormData) => {
-    const data = await request<{ token: string }>(`/verify/${userId}`, {
+  /** Submits residency verification document. Backend returns a message on success. */
+  submitVerification: (userId: string, formData: FormData) =>
+    request<{ message: string }>(`/verify/${userId}`, {
       method: 'POST',
       body: formData,
-    });
-    const payload = decodeJwt(data.token);
-    return {
-      token: data.token,
-      userId: payload?.userId ?? userId,
-      isVerified: payload?.isVerified ?? false,
-    };
-  },
+    }),
 
   getVerification: (userId: string) =>
     request(`/verification/${userId}`),

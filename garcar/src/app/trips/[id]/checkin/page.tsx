@@ -26,7 +26,9 @@ export default function CheckInPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    api.getBooking(id).then((b) => setBooking(b as BookingInfo)).catch(() => {});
+    api.getBooking(id)
+      .then((b) => setBooking(b as BookingInfo))
+      .catch((err: unknown) => setError(err instanceof Error ? err.message : 'Failed to load booking'));
   }, [id]);
 
   function handleFiles(files: FileList | null) {

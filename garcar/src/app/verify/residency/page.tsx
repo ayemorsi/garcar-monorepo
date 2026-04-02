@@ -35,8 +35,6 @@ function VerifyResidencyContent() {
     try {
       const formData = new FormData();
       formData.append('verificationDocument', file);
-      formData.append('state', 'VA');
-      formData.append('city', 'Arlington');
       formData.append('apartment', building);
       await api.submitVerification(userId, formData);
       router.push('/verify/pending');

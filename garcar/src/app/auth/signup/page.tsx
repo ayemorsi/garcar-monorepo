@@ -52,7 +52,7 @@ export default function SignUpPage() {
     setLoading(true);
     try {
       const username = form.email;
-      await api.register({ username, password: form.password, building: selectedBuilding?.name || '', firstName: form.firstName, lastName: form.lastName });
+      await api.register({ username, password: form.password, building: selectedBuilding?.name || '', buildingId: selectedBuilding?._id || '', firstName: form.firstName, lastName: form.lastName });
       const data = await api.login({ username, password: form.password });
       saveAuth(data.token, data.userId);
       if (data.refreshToken) saveRefreshToken(data.refreshToken);

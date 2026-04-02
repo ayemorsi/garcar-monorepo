@@ -22,8 +22,36 @@ const notificationRoutes = require('./routes/notification');
 const app = express();
 const port = configPort;
 
+// ─── Rate limiter (in-process — good enough for single-instance deploys) ──────
+const rateLimitMap = new Map();
+function rateLimit(maxRequests, windowMs) {
+  return (req, res, next) => {
+    const key = req.ip || 'unknown';
+    const now = Date.now();
+    const requests = (rateLimitMap.get(key) || []).filter(t => t > now - windowMs);
+    if (requests.length >= maxRequests) {
+      return res.status(429).json({ message: 'Too many attempts. Please wait and try again.' });
+    }
+    requests.push(now);
+    rateLimitMap.set(key, requests);
+    next();
+  };
+}
+const authLimiter = rateLimit(10, 15 * 60 * 1000); // 10 per 15 minutes
+
 // Middleware
-app.use(cors());
+const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow server-to-server (no origin) and listed origins
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error('CORS: origin not allowed'));
+    }
+  },
+  credentials: true,
+}));
 app.use((req, res, next) => {
   // Skip for multipart (file uploads) — multer handles those
   if (req.headers['content-type']?.startsWith('multipart/')) return next();
@@ -93,30 +121,41 @@ const authenticate = (req, res, next) => {
 };
 
 // Route to handle user registration
-app.post('/api/register', async (req, res) => {
+app.post('/api/register', authLimiter, async (req, res) => {
   try {
     const settings = await AppSettings.findOne() || new AppSettings();
     if (!settings.registrationOpen) {
-      return res.status(403).send('Registration is currently closed');
+      return res.status(403).json({ message: 'Registration is currently closed' });
     }
-    const { username, password, building, firstName, lastName } = req.body;
+    const { username, password, building, buildingId, firstName, lastName } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: 'Username and password are required' });
+    }
     const existingUser = await User.findOne({ username });
     if (existingUser) {
-      return res.status(400).send('Username already exists');
+      return res.status(400).json({ message: 'Username already exists' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
     const approved = !settings.requireApproval;
-    const user = new User({ username, password: hashedPassword, approved, building: building || '', firstName: firstName || '', lastName: lastName || '' });
+    const user = new User({
+      username,
+      password: hashedPassword,
+      approved,
+      building: building || '',
+      buildingId: buildingId || '',
+      firstName: firstName || '',
+      lastName: lastName || '',
+    });
     await user.save();
-    res.status(201).send('User registered successfully');
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Error registering user:', error);
-    res.status(500).send('Error registering user');
+    res.status(500).json({ message: 'Error registering user' });
   }
 });
 
 // Route to handle user login
-app.post('/api/login', async (req, res) => {
+app.post('/api/login', authLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
@@ -145,7 +184,7 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
     await User.findByIdAndUpdate(req.params.userId, {
       verificationData: { state, city, apartment, verificationDocument: documentData },
       isVerified: false,
-      approved: false,
+      // approved stays as-is — admin will set it after reviewing the document
     });
     res.json({ message: 'Document submitted. Pending admin review.' });
   } catch (error) {
@@ -184,14 +223,17 @@ app.get('/api/auth/status', authenticate, async (req, res) => {
   }
 });
 
-// Route to fetch user verification data
+// Route to fetch user verification data (exclude the raw base64 document from response)
 app.get('/api/verification/:userId', authenticate, async (req, res) => {
   try {
-    const user = await User.findById(req.params.userId);
-    res.json(user.verificationData);
+    const user = await User.findById(req.params.userId).select('verificationData');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    // Return metadata only — not the raw base64 document string
+    const { verificationDocument, ...meta } = user.verificationData?.toObject?.() ?? user.verificationData ?? {};
+    res.json({ ...meta, hasDocument: !!verificationDocument });
   } catch (error) {
     console.error('Error fetching verification data:', error);
-    res.status(500).send('Error fetching verification data');
+    res.status(500).json({ message: 'Error fetching verification data' });
   }
 });
 

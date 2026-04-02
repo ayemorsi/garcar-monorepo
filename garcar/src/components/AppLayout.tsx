@@ -221,6 +221,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link href="/help" className="block text-sm text-gray-600 hover:text-gray-900">Help Center</Link>
                 <Link href="/contact" className="block text-sm text-gray-600 hover:text-gray-900">Contact Us</Link>
                 <Link href="/terms" className="block text-sm text-gray-600 hover:text-gray-900">Terms of Service</Link>
+                <Link href="/privacy" className="block text-sm text-gray-600 hover:text-gray-900">Privacy Policy</Link>
+                <Link href="/security" className="block text-sm text-gray-600 hover:text-gray-900">Security</Link>
               </div>
             </div>
             <div>
