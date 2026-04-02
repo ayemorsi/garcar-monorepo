@@ -38,6 +38,53 @@ router.post('/bookings', authenticate, async (req, res) => {
     const car = await Car.findById(carId);
     if (!car) return res.status(404).json({ message: 'Car not found' });
 
+    // ── Availability validation ───────────────────────────────────────────────
+    const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+    const ws = car.weeklySchedule || {};
+
+    function dayLabel(d) {
+      return d.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+
+    function toMinutes(hhmm) {
+      const [h, m] = (hhmm || '00:00').split(':').map(Number);
+      return h * 60 + m;
+    }
+
+    function fmtTime(hhmm) {
+      const [h, m] = (hhmm || '00:00').split(':').map(Number);
+      const ampm = h < 12 ? 'am' : 'pm';
+      const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
+      return `${hr}:${m.toString().padStart(2, '0')} ${ampm}`;
+    }
+
+    if (bookingType === 'hourly') {
+      const bookDate = new Date(`${startDate}T00:00`);
+      const dayName  = DAY_NAMES[bookDate.getDay()];
+      if (ws[dayName] === false) {
+        return res.status(400).json({ message: `This car is not available on ${dayLabel(bookDate)}s. Check the host's schedule.` });
+      }
+      const reqStart = toMinutes(startTime || '09:00');
+      const reqEnd   = toMinutes(endTime   || '10:00');
+      const avStart  = toMinutes(car.availableHoursStart || '07:00');
+      const avEnd    = toMinutes(car.availableHoursEnd   || '21:00');
+      if (reqStart < avStart || reqEnd > avEnd) {
+        return res.status(400).json({
+          message: `Available hours are ${fmtTime(car.availableHoursStart)} – ${fmtTime(car.availableHoursEnd)} on this day.`,
+        });
+      }
+    } else {
+      const rangeStart = new Date(startDate);
+      const rangeEnd   = new Date(endDate);
+      for (let d = new Date(rangeStart); d < rangeEnd; d = new Date(d.getTime() + 86400000)) {
+        const dayName = DAY_NAMES[d.getDay()];
+        if (ws[dayName] === false) {
+          return res.status(400).json({ message: `This car is not available on ${dayLabel(d)}s. Check the host's schedule.` });
+        }
+      }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
     let start, end, totalPrice, notifDesc;
     const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 

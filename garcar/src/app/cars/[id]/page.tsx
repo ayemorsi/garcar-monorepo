@@ -45,6 +45,9 @@ interface CarDetail {
   images: string[];
   available: boolean;
   licensePlate: string;
+  weeklySchedule?: Record<string, boolean>;
+  availableHoursStart?: string;
+  availableHoursEnd?: string;
   userId: {
     _id: string;
     firstName?: string;
@@ -138,6 +141,21 @@ function RuleItem({ label, allowed }: { label: string; allowed: boolean }) {
   );
 }
 
+const DAY_NAMES = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
+const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+function toMinutes(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return h * 60 + m;
+}
+
+function fmtTime(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const ampm = h < 12 ? 'am' : 'pm';
+  const hr = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${hr}:${m.toString().padStart(2, '0')} ${ampm}`;
+}
+
 function BookingWidget({ car }: { car: CarDetail }) {
   const router = useRouter();
   const hasHourly = car.pricehr > 0;
@@ -149,11 +167,44 @@ function BookingWidget({ car }: { car: CarDetail }) {
 
   // Hourly fields
   const [hourDate, setHourDate] = useState('');
-  const [startTime, setStartTime] = useState('09:00');
+  const [startTime, setStartTime] = useState(car.availableHoursStart || '09:00');
   const [endTime, setEndTime] = useState('11:00');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const ws = car.weeklySchedule || {};
+  const avStart = car.availableHoursStart || '00:00';
+  const avEnd   = car.availableHoursEnd   || '23:59';
+
+  // Which days are available
+  const enabledDays = DAY_NAMES.filter(d => ws[d] !== false);
+  const enabledDayLabels = DAY_LABELS.filter((_, i) => ws[DAY_NAMES[i]] !== false);
+
+  function validateDate(dateStr: string): string {
+    if (!dateStr) return '';
+    const day = DAY_NAMES[new Date(dateStr + 'T12:00').getDay()];
+    if (ws[day] === false) return `Not available on ${DAY_LABELS[DAY_NAMES.indexOf(day)]}s`;
+    return '';
+  }
+
+  function validateRange(s: string, e: string): string {
+    if (!s || !e) return '';
+    const start = new Date(s + 'T12:00');
+    const end   = new Date(e + 'T12:00');
+    for (let d = new Date(start); d <= end; d = new Date(d.getTime() + 86400000)) {
+      const day = DAY_NAMES[d.getDay()];
+      if (ws[day] === false) return `Not available on ${DAY_LABELS[DAY_NAMES.indexOf(day)]}s`;
+    }
+    return '';
+  }
+
+  function validateTimes(s: string, e: string): string {
+    if (toMinutes(s) < toMinutes(avStart)) return `Available from ${fmtTime(avStart)}`;
+    if (toMinutes(e) > toMinutes(avEnd)) return `Available until ${fmtTime(avEnd)}`;
+    if (toMinutes(e) <= toMinutes(s)) return 'End time must be after start time';
+    return '';
+  }
 
   // Daily calculations
   const days = startDate && endDate
@@ -162,10 +213,7 @@ function BookingWidget({ car }: { car: CarDetail }) {
 
   // Hourly calculations
   const hours = (() => {
-    if (!startTime || !endTime) return 1;
-    const [sh, sm] = startTime.split(':').map(Number);
-    const [eh, em] = endTime.split(':').map(Number);
-    const diff = (eh * 60 + em) - (sh * 60 + sm);
+    const diff = toMinutes(endTime) - toMinutes(startTime);
     return Math.max(1, Math.ceil(diff / 60));
   })();
 
@@ -180,13 +228,17 @@ function BookingWidget({ car }: { car: CarDetail }) {
       router.push('/auth/login?next=' + window.location.pathname);
       return;
     }
-    if (mode === 'daily' && (!startDate || !endDate)) {
-      setError('Please select trip dates.');
-      return;
+    if (mode === 'daily') {
+      if (!startDate || !endDate) { setError('Please select trip dates.'); return; }
+      const rangeErr = validateRange(startDate, endDate);
+      if (rangeErr) { setError(rangeErr); return; }
     }
-    if (mode === 'hourly' && !hourDate) {
-      setError('Please select a date.');
-      return;
+    if (mode === 'hourly') {
+      if (!hourDate) { setError('Please select a date.'); return; }
+      const dayErr = validateDate(hourDate);
+      if (dayErr) { setError(dayErr); return; }
+      const timeErr = validateTimes(startTime, endTime);
+      if (timeErr) { setError(timeErr); return; }
     }
     try {
       setLoading(true);
@@ -216,6 +268,34 @@ function BookingWidget({ car }: { car: CarDetail }) {
           <span className="ml-auto text-xs text-gray-400">${car.pricehr}/hr also available</span>
         )}
       </div>
+
+      {/* Availability summary */}
+      {enabledDays.length < 7 && (
+        <div className="bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 mb-4">
+          <p className="text-xs font-semibold text-gray-700 mb-1.5">
+            <Clock className="w-3 h-3 inline mr-1" />
+            Available schedule
+          </p>
+          <div className="flex gap-1 mb-1.5">
+            {DAY_LABELS.map((label, i) => {
+              const enabled = ws[DAY_NAMES[i]] !== false;
+              return (
+                <span
+                  key={label}
+                  className={`w-7 h-7 rounded-full text-xs font-semibold flex items-center justify-center ${
+                    enabled ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-400'
+                  }`}
+                >
+                  {label[0]}
+                </span>
+              );
+            })}
+          </div>
+          <p className="text-xs text-gray-500">
+            {fmtTime(avStart)} – {fmtTime(avEnd)}
+          </p>
+        </div>
+      )}
 
       {/* Daily / Hourly toggle — only show if pricehr is set */}
       {hasHourly && (
@@ -247,7 +327,7 @@ function BookingWidget({ car }: { car: CarDetail }) {
                   type="date"
                   value={startDate}
                   min={new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setStartDate(e.target.value)}
+                  onChange={(e) => { setStartDate(e.target.value); setError(validateDate(e.target.value)); }}
                   className="text-sm text-gray-800 focus:outline-none w-full"
                 />
               </div>
@@ -260,7 +340,7 @@ function BookingWidget({ car }: { car: CarDetail }) {
                   type="date"
                   value={endDate}
                   min={startDate || new Date().toISOString().split('T')[0]}
-                  onChange={(e) => setEndDate(e.target.value)}
+                  onChange={(e) => { setEndDate(e.target.value); setError(validateRange(startDate, e.target.value)); }}
                   className="text-sm text-gray-800 focus:outline-none w-full"
                 />
               </div>
@@ -277,7 +357,7 @@ function BookingWidget({ car }: { car: CarDetail }) {
                 type="date"
                 value={hourDate}
                 min={new Date().toISOString().split('T')[0]}
-                onChange={(e) => setHourDate(e.target.value)}
+                onChange={(e) => { setHourDate(e.target.value); setError(validateDate(e.target.value)); }}
                 className="text-sm text-gray-800 focus:outline-none w-full"
               />
             </div>
@@ -290,7 +370,9 @@ function BookingWidget({ car }: { car: CarDetail }) {
                 <input
                   type="time"
                   value={startTime}
-                  onChange={(e) => setStartTime(e.target.value)}
+                  min={avStart}
+                  max={avEnd}
+                  onChange={(e) => { setStartTime(e.target.value); setError(validateTimes(e.target.value, endTime)); }}
                   className="text-sm text-gray-800 focus:outline-none w-full"
                 />
               </div>
@@ -302,7 +384,9 @@ function BookingWidget({ car }: { car: CarDetail }) {
                 <input
                   type="time"
                   value={endTime}
-                  onChange={(e) => setEndTime(e.target.value)}
+                  min={avStart}
+                  max={avEnd}
+                  onChange={(e) => { setEndTime(e.target.value); setError(validateTimes(startTime, e.target.value)); }}
                   className="text-sm text-gray-800 focus:outline-none w-full"
                 />
               </div>
