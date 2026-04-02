@@ -28,7 +28,6 @@ const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http:/
 
 export default function ListPhotosPage() {
   const router = useRouter();
-  const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [photos, setPhotos] = useState<UploadedPhoto[]>([]);
   const [isDragOver, setIsDragOver] = useState(false);
