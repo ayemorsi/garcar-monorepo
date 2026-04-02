@@ -216,6 +216,69 @@ app.use('/api', adminRoutes);
 app.use('/api', notificationRoutes);
 app.use('/uploads', express.static('/tmp/uploads'));
 
+// GET /api/vin/:vin — decode a VIN via NHTSA public API (no auth required)
+app.get('/api/vin/:vin', async (req, res) => {
+  const { vin } = req.params;
+  if (!/^[A-HJ-NPR-Z0-9]{17}$/i.test(vin)) {
+    return res.status(400).json({ message: 'VIN must be exactly 17 characters (letters and numbers, no I/O/Q).' });
+  }
+  try {
+    const nhtsaRes = await fetch(
+      `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVin/${vin.toUpperCase()}?format=json`
+    );
+    if (!nhtsaRes.ok) throw new Error('NHTSA API error');
+    const data = await nhtsaRes.json();
+    const results = data.Results || [];
+
+    const get = (variable) => {
+      const item = results.find(r => r.Variable === variable);
+      return item && item.Value && item.Value !== 'Not Applicable' && item.Value !== 'null' ? item.Value : null;
+    };
+
+    const makeRaw = get('Make');
+    const modelRaw = get('Model');
+    const yearRaw  = get('Model Year');
+
+    if (!makeRaw || !modelRaw || !yearRaw) {
+      return res.status(404).json({ message: 'Vehicle not found — double-check your VIN and try again.' });
+    }
+
+    // Capitalize make (HONDA → Honda)
+    const make = makeRaw.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+
+    // Fuel type mapping
+    const fuelRaw = (get('Fuel Type - Primary') || '').toLowerCase();
+    let type = 'Gas';
+    if (fuelRaw.includes('electric')) type = 'Electric';
+    else if (fuelRaw.includes('hybrid')) type = 'Hybrid';
+    else if (fuelRaw.includes('diesel')) type = 'Diesel';
+
+    // Transmission mapping
+    const transRaw = (get('Transmission Style') || '').toLowerCase();
+    let transmission = 'Automatic';
+    if (transRaw.includes('manual')) transmission = 'Manual';
+    else if (transRaw.includes('continuously variable') || transRaw.includes('cvt')) transmission = 'CVT';
+
+    // Seats
+    const seatsRaw = get('Number of Seats (total)') || get('Seating Rows') || '5';
+    const seats = Math.max(2, Math.min(8, parseInt(seatsRaw) || 5));
+
+    res.json({
+      make,
+      model: modelRaw,
+      year: parseInt(yearRaw),
+      type,
+      transmission,
+      seats,
+      vehicleType: get('Vehicle Type') || '',
+      trim: get('Trim') || '',
+    });
+  } catch (err) {
+    console.error('VIN decode error:', err);
+    res.status(500).json({ message: 'VIN lookup failed — please try again or enter details manually.' });
+  }
+});
+
 // GET /api/host/stats — summary stats for the logged-in host
 app.get('/api/host/stats', authenticate, async (req, res) => {
   try {

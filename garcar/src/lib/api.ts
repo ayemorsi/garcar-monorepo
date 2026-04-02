@@ -208,6 +208,10 @@ export const api = {
     request('/users/me/password', { method: 'PUT', body: JSON.stringify(body) }),
   getUser: (id: string) => request(`/users/${id}`),
 
+  // VIN
+  decodeVin: (vin: string) =>
+    request<{ make: string; model: string; year: number; type: string; transmission: string; seats: number; trim: string; vehicleType: string }>(`/vin/${vin}`),
+
   // Host
   getHostStats: () => request('/host/stats'),
 
