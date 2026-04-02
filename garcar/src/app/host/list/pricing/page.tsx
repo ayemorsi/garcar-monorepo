@@ -50,7 +50,7 @@ const DAYS = [
 
 export default function ListPricingPage() {
   const router = useRouter();
-  const [priceTab, setPriceTab] = useState<PriceTab>('daily');
+  const [priceTab, setPriceTab] = useState<PriceTab>('hourly');
   const [dailyPrice, setDailyPrice] = useState('65');
   const [hourlyPrice, setHourlyPrice] = useState('15');
   const [isEditing, setIsEditing] = useState(false);
@@ -68,8 +68,8 @@ export default function ListPricingPage() {
   ]);
 
   const [fuelPolicy, setFuelPolicy] = useState('Return at same level');
-  const [distanceLimit, setDistanceLimit] = useState('200');
-  const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('km');
+  const [distanceLimit, setDistanceLimit] = useState('150');
+  const [distanceUnit, setDistanceUnit] = useState<'km' | 'mi'>('mi');
   const [weeklySchedule, setWeeklySchedule] = useState<Record<string, boolean>>(
     { sun: false, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false }
   );
@@ -120,12 +120,19 @@ export default function ListPricingPage() {
     router.push('/host/list/standards');
   }
 
-  // Earnings estimate
+  // Earnings estimate — different for hourly vs daily
   const activeDaysPerWeek = Object.values(weeklySchedule).filter(Boolean).length;
   const estDaysPerMonth = Math.round(activeDaysPerWeek * 4.3 * 0.6); // ~60% occupancy
-  const price = parseFloat(dailyPrice) || 0;
-  const estGross = price * estDaysPerMonth;
-  const estNet = Math.round(estGross * 0.8); // ~20% platform
+
+  const hourlyRate = parseFloat(hourlyPrice) || 0;
+  const dailyRate  = parseFloat(dailyPrice)  || 0;
+
+  // Hourly: avg 3-hr trip, ~1.5 trips on days the car is rented
+  const estHourlyPerDay  = Math.round(hourlyRate * 3 * 1.5 * 0.8);  // net after 20% fee
+  const estHourlyMonthly = Math.round(estHourlyPerDay * estDaysPerMonth);
+
+  // Daily: straightforward days × rate
+  const estDailyMonthly = Math.round(dailyRate * estDaysPerMonth * 0.8);
 
   return (
     <AppLayout>
@@ -174,7 +181,7 @@ export default function ListPricingPage() {
               <h2 className="text-base font-semibold text-gray-900 mb-4">Set Your Rate</h2>
 
               <div className="flex border border-gray-200 rounded-lg p-1 mb-5 w-fit">
-                {(['hourly', 'daily'] as PriceTab[]).map((tab) => (
+                {(['hourly', 'daily'] as PriceTab[]).map((tab) => (  // hourly first
                   <button
                     key={tab}
                     onClick={() => setPriceTab(tab)}
@@ -336,27 +343,55 @@ export default function ListPricingPage() {
                 <TrendingUp className="w-4 h-4 text-blue-600" />
                 <h2 className="text-base font-semibold text-gray-900">Your earnings estimate</h2>
               </div>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Days available/week</span>
-                  <span className="font-semibold text-gray-900">{activeDaysPerWeek} days</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Est. rental days/mo</span>
-                  <span className="font-semibold text-gray-900">~{estDaysPerMonth} days</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">Daily rate</span>
-                  <span className="font-semibold text-gray-900">${price}/day</span>
-                </div>
-                <div className="border-t border-gray-100 pt-3">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-500">Est. monthly earnings</span>
-                    <span className="text-lg font-bold text-green-600">${estNet}</span>
+              {priceTab === 'hourly' ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Days available/week</span>
+                    <span className="font-semibold text-gray-900">{activeDaysPerWeek} days</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">After platform fee, ~60% occupancy</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Avg trip length</span>
+                    <span className="font-semibold text-gray-900">~3 hrs</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Hourly rate</span>
+                    <span className="font-semibold text-gray-900">${hourlyRate}/hr</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Est. per rental day</span>
+                    <span className="font-semibold text-gray-900">~${estHourlyPerDay}</span>
+                  </div>
+                  <div className="border-t border-gray-100 pt-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Est. monthly earnings</span>
+                      <span className="text-lg font-bold text-green-600">${estHourlyMonthly}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">After platform fee, avg 1.5 trips/day</p>
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Days available/week</span>
+                    <span className="font-semibold text-gray-900">{activeDaysPerWeek} days</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Est. rental days/mo</span>
+                    <span className="font-semibold text-gray-900">~{estDaysPerMonth} days</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Daily rate</span>
+                    <span className="font-semibold text-gray-900">${dailyRate}/day</span>
+                  </div>
+                  <div className="border-t border-gray-100 pt-3">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-gray-500">Est. monthly earnings</span>
+                      <span className="text-lg font-bold text-green-600">${estDailyMonthly}</span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">After platform fee, ~60% occupancy</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Community Rules */}
