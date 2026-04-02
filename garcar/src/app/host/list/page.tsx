@@ -305,7 +305,7 @@ function ListVehicleInfoPage() {
                     value={form.make}
                     onChange={(e) => handleChange('make', e.target.value)}
                     placeholder="e.g. Honda"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -319,7 +319,7 @@ function ListVehicleInfoPage() {
                     value={form.model}
                     onChange={(e) => handleChange('model', e.target.value)}
                     placeholder="e.g. Civic"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -332,7 +332,7 @@ function ListVehicleInfoPage() {
                     <select
                       value={form.year}
                       onChange={(e) => handleChange('year', e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                     >
                       <option value="">Select year</option>
                       {YEARS.map(y => <option key={y} value={y}>{y}</option>)}
@@ -351,7 +351,7 @@ function ListVehicleInfoPage() {
                     value={form.trim}
                     onChange={(e) => handleChange('trim', e.target.value)}
                     placeholder="e.g. SE, Sport, Limited"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
@@ -366,7 +366,7 @@ function ListVehicleInfoPage() {
                       value={form.licensePlate}
                       onChange={(e) => handleChange('licensePlate', e.target.value.toUpperCase())}
                       placeholder="ABC-1234"
-                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                   <div>
@@ -375,7 +375,7 @@ function ListVehicleInfoPage() {
                       <select
                         value={form.state}
                         onChange={(e) => handleChange('state', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
                         <option value="">Select</option>
                         {STATES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -413,7 +413,7 @@ function ListVehicleInfoPage() {
                       <select
                         value={form.seats}
                         onChange={(e) => handleChange('seats', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
                         {['2', '4', '5', '6', '7', '8'].map(n => (
                           <option key={n} value={n}>{n} seats</option>
@@ -428,7 +428,7 @@ function ListVehicleInfoPage() {
                       <select
                         value={form.transmission}
                         onChange={(e) => handleChange('transmission', e.target.value)}
-                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                        className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                       >
                         <option value="Automatic">Automatic</option>
                         <option value="Manual">Manual</option>
@@ -449,7 +449,7 @@ function ListVehicleInfoPage() {
                     onChange={(e) => handleChange('description', e.target.value)}
                     rows={3}
                     placeholder="Tell renters about your car — features, condition, anything they should know..."
-                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    className="w-full border border-gray-300 rounded-lg px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                   />
                 </div>
               </div>
