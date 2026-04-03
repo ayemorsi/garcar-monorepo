@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Car, CalendarDays, MessageSquare, PlusCircle, Star, TrendingUp, Clock, MapPin } from 'lucide-react';
+import { Car, CalendarDays, MessageSquare, PlusCircle, Star, TrendingUp, Clock, MapPin, Clock3 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
 
@@ -30,6 +30,7 @@ interface UserProfile {
   avgRating: number;
   tripCount: number;
   building?: string;
+  isVerified?: boolean;
 }
 
 function formatDate(dateStr: string) {
@@ -63,6 +64,22 @@ export default function DashboardPage() {
   return (
     <AppLayout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        {/* Pending approval banner */}
+        {!loading && profile && !profile.isVerified && (
+          <div className="mb-6 bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 flex items-start gap-4">
+            <Clock3 className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-amber-800">Your account is pending approval</p>
+              <p className="text-sm text-amber-700 mt-0.5">
+                Our team is reviewing your residency document. You&apos;ll get full access once approved — usually within 24 hours.
+              </p>
+            </div>
+            <a href="/verify/residency" className="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap underline">
+              Check status →
+            </a>
+          </div>
+        )}
+
         {/* Welcome */}
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Welcome back, {displayName} 👋</h1>

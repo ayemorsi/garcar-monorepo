@@ -56,7 +56,7 @@ export default function SignUpPage() {
       const data = await api.login({ username, password: form.password });
       saveAuth(data.token, data.userId);
       if (data.refreshToken) saveRefreshToken(data.refreshToken);
-      router.push(`/verify/residency?userId=${data.userId}&building=${encodeURIComponent(selectedBuilding?.name || '')}`);
+      window.location.href = `/verify/residency?userId=${data.userId}&building=${encodeURIComponent(selectedBuilding?.name || '')}`;
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {

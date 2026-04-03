@@ -143,7 +143,7 @@ function VerifyResidencyContent() {
                 disabled={loading}
                 className="mt-4 w-full bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
               >
-                {loading ? 'Uploading…' : 'Select Files'}
+                {loading ? 'Uploading…' : 'Submit Document'}
               </button>
             )}
           </div>

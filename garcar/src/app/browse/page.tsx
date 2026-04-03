@@ -15,6 +15,8 @@ import {
   Building2,
   CheckCircle,
   MapPin,
+  Lock,
+  Clock3,
 } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
@@ -60,7 +62,7 @@ function StarRating({ rating }: { rating: number }) {
   );
 }
 
-function CarCard({ car, dateFrom, dateTo }: { car: CarItem; dateFrom?: string; dateTo?: string }) {
+function CarCard({ car, dateFrom, dateTo, locked }: { car: CarItem; dateFrom?: string; dateTo?: string; locked?: boolean }) {
   const name = `${car.make} ${car.model}`;
   const hasDates = !!(dateFrom && dateTo);
   const badge = hasDates
@@ -68,6 +70,38 @@ function CarCard({ car, dateFrom, dateTo }: { car: CarItem; dateFrom?: string; d
     : car.available
       ? { label: 'Available', cls: 'bg-green-100 text-green-700' }
       : null;
+
+  if (locked) {
+    return (
+      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden relative">
+        {/* Blurred image */}
+        <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
+          {car.images?.[0] ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={car.images[0]} alt="" className="w-full h-48 object-cover blur-sm scale-105" />
+          ) : (
+            <CarImagePlaceholder />
+          )}
+          <div className="absolute inset-0 bg-gray-900/40 flex items-center justify-center">
+            <div className="text-center text-white">
+              <Lock className="w-6 h-6 mx-auto mb-1" />
+              <p className="text-xs font-semibold">Pending Approval</p>
+            </div>
+          </div>
+        </div>
+        <div className="p-4">
+          <div className="flex items-start justify-between mb-1">
+            <div className="h-3.5 bg-gray-200 rounded w-28 animate-pulse" />
+            <div className="h-3.5 bg-gray-200 rounded w-16 animate-pulse" />
+          </div>
+          <div className="h-3 bg-gray-100 rounded w-36 mb-3 animate-pulse" />
+          <button disabled className="w-full bg-gray-100 text-gray-400 text-sm font-semibold py-2 rounded-lg cursor-not-allowed flex items-center justify-center gap-2">
+            <Lock className="w-3.5 h-3.5" /> Approval Required
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-md transition-shadow">
@@ -550,6 +584,20 @@ function BrowsePageContent({
               </div>
             </div>
 
+            {/* Pending approval banner */}
+            {!loading && userProfile && userProfile.isVerified === false && (
+              <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3.5 flex items-start gap-3">
+                <Clock3 className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-amber-800">Account pending approval</p>
+                  <p className="text-sm text-amber-700 mt-0.5">Cars are locked until our team approves your residency document. Usually within 24 hours.</p>
+                </div>
+                <a href="/verify/residency" className="text-xs font-semibold text-amber-700 hover:text-amber-900 whitespace-nowrap underline mt-0.5">
+                  View status →
+                </a>
+              </div>
+            )}
+
             {/* Error */}
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 mb-4 text-sm">
@@ -574,7 +622,7 @@ function BrowsePageContent({
             ) : filteredCars.length > 0 ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {filteredCars.map((car) => (
-                  <CarCard key={car._id} car={car} dateFrom={dateFrom} dateTo={dateTo} />
+                  <CarCard key={car._id} car={car} dateFrom={dateFrom} dateTo={dateTo} locked={userProfile?.isVerified === false} />
                 ))}
               </div>
             ) : (

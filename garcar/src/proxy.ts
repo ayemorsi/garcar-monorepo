@@ -12,10 +12,8 @@ function decodeJwt(token: string): { userId?: string; isVerified?: boolean } | n
   }
 }
 
-// Routes that require a verified account
+// Routes that require a verified + approved account
 const VERIFIED_ROUTES = [
-  '/browse',
-  '/cars',
   '/my-trips',
   '/messages',
   '/reviews',
@@ -24,8 +22,8 @@ const VERIFIED_ROUTES = [
   '/settings',
 ];
 
-// Routes that require login but NOT verification (e.g. the verify flow itself)
-const AUTH_ROUTES = ['/verify'];
+// Routes that require login but show content even while pending verification
+const AUTH_ROUTES = ['/browse', '/cars', '/verify', '/dashboard'];
 
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -63,6 +61,7 @@ export const config = {
   matcher: [
     '/browse/:path*',
     '/cars/:path*',
+    '/dashboard/:path*',
     '/my-trips/:path*',
     '/messages/:path*',
     '/reviews/:path*',
