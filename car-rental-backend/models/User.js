@@ -19,7 +19,7 @@ const userSchema = new mongoose.Schema({
   avatar: { type: String },
   role: { type: String, enum: ['user', 'admin'], default: 'user' },
   paused: { type: Boolean, default: false },
-  approved: { type: Boolean, default: true },
+  approved: { type: Boolean, default: false },
   building: { type: String, default: '' },      // display name
   buildingId: { type: String, default: '' },    // reference to Building._id
   lastSeen: { type: Date },

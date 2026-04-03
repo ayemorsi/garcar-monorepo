@@ -9,7 +9,7 @@ import { api } from '@/lib/api';
 function VerifyResidencyContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const userId = searchParams.get('userId') || '';
+  const userId = searchParams.get('userId') || (typeof window !== 'undefined' ? localStorage.getItem('userId') || '' : '');
   const building = searchParams.get('building') || '';
 
   const [file, setFile] = useState<File | null>(null);
@@ -137,15 +137,6 @@ function VerifyResidencyContent() {
               />
             </div>
 
-            {file && (
-              <button
-                onClick={handleSubmit}
-                disabled={loading}
-                className="mt-4 w-full bg-blue-600 text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
-              >
-                {loading ? 'Uploading…' : 'Submit Document'}
-              </button>
-            )}
           </div>
 
           {/* Option 2 — Resident portal */}

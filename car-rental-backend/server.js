@@ -140,11 +140,10 @@ app.post('/api/register', authLimiter, async (req, res) => {
       return res.status(400).json({ message: 'Username already exists' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const approved = !settings.requireApproval;
     const user = new User({
       username,
       password: hashedPassword,
-      approved,
+      approved: false,
       building: building || '',
       buildingId: buildingId || '',
       firstName: firstName || '',
@@ -164,10 +163,10 @@ app.post('/api/login', authLimiter, async (req, res) => {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
     if (user && await bcrypt.compare(password, user.password)) {
-      if (user.approved === false) {
-        return res.status(401).send('Your account is pending admin approval');
+      if (user.paused === true) {
+        return res.status(401).send('Your account has been suspended. Please contact support.');
       }
-      const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
+      const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified && user.approved, role: user.role || 'user' }, secretKey, { expiresIn: '1h' });
       const refreshToken = jwt.sign({ userId: user._id }, secretKey, { expiresIn: '7d' });
       res.json({ token, refreshToken });
     } else {
@@ -204,9 +203,9 @@ app.post('/api/auth/refresh', async (req, res) => {
   try {
     const decoded = jwt.verify(refreshToken, secretKey);
     const user = await User.findById(decoded.userId).select('username isVerified role approved');
-    if (!user || user.approved === false) return res.status(401).json({ message: 'Unauthorized' });
+    if (!user || user.paused === true) return res.status(401).json({ message: 'Unauthorized' });
     const token = jwt.sign(
-      { userId: user._id, username: user.username, isVerified: user.isVerified, role: user.role || 'user' },
+      { userId: user._id, username: user.username, isVerified: user.isVerified && user.approved, role: user.role || 'user' },
       secretKey,
       { expiresIn: '1h' }
     );
