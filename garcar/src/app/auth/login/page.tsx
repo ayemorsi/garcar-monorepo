@@ -9,7 +9,6 @@ import { saveAuth, saveRefreshToken } from '@/lib/auth';
 
 function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get('next') || '/browse';
   const justApproved = searchParams.get('approved') === '1';
 
   const [form, setForm] = useState({ email: '', password: '' });
@@ -35,7 +34,7 @@ function LoginForm() {
       if (data.refreshToken) saveRefreshToken(data.refreshToken);
 
       if (data.isVerified) {
-        window.location.href = next;
+        window.location.href = '/browse';
       } else {
         // Account exists but residency not yet verified
         window.location.href = `/verify/residency?userId=${data.userId}`;
