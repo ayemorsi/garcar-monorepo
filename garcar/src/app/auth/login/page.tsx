@@ -11,17 +11,14 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const justApproved = searchParams.get('approved') === '1';
 
-  const [form, setForm] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Read directly from the form DOM so browser-autofilled values are captured
-    // even when the React controlled state wasn't updated by an onChange event.
     const fd = new FormData(e.currentTarget);
-    const username = (fd.get('username') as string) || form.email;
-    const password = (fd.get('password') as string) || form.password;
+    const username = (fd.get('username') as string).trim();
+    const password = fd.get('password') as string;
     if (!username || !password) {
       setError('Please enter your username and password.');
       return;
@@ -73,9 +70,6 @@ function LoginForm() {
                 name="username"
                 autoComplete="username"
                 placeholder="your username"
-                value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-                required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -91,9 +85,6 @@ function LoginForm() {
                 type="password"
                 name="password"
                 autoComplete="current-password"
-                value={form.password}
-                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-                required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
