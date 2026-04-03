@@ -2,13 +2,12 @@
 
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { Car } from 'lucide-react';
 import { api } from '@/lib/api';
 import { saveAuth, saveRefreshToken } from '@/lib/auth';
 
 function LoginForm() {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get('next') || '/browse';
   const justApproved = searchParams.get('approved') === '1';
@@ -36,10 +35,10 @@ function LoginForm() {
       if (data.refreshToken) saveRefreshToken(data.refreshToken);
 
       if (data.isVerified) {
-        router.push(next);
+        window.location.href = next;
       } else {
         // Account exists but residency not yet verified
-        router.push(`/verify/residency?userId=${data.userId}`);
+        window.location.href = `/verify/residency?userId=${data.userId}`;
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
