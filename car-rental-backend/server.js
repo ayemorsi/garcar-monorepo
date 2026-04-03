@@ -37,7 +37,7 @@ function rateLimit(maxRequests, windowMs) {
     next();
   };
 }
-const authLimiter = rateLimit(10, 15 * 60 * 1000); // 10 per 15 minutes
+const authLimiter = rateLimit(20, 15 * 60 * 1000); // 20 per 15 minutes
 
 // Middleware
 const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
