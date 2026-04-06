@@ -34,6 +34,16 @@
 
 ---
 
+## Stack & UI Components
+
+- **Framework:** Next.js App Router
+- **UI library:** shadcn/ui + **shadcnblocks** (premium account)
+- **Component priority:** shadcnblocks first → shadcn/ui second → custom last
+- Always check shadcnblocks for a matching block before building a component from scratch
+- Default to **Server Components** — only add `'use client'` when strictly necessary (event handlers, hooks, browser APIs)
+
+---
+
 ## Project Context
 
 ### Monorepo Structure
