@@ -3,9 +3,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Car, MapPin, CheckCircle, Key, Shield } from 'lucide-react';
+import { Car, MapPin, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { saveAuth, saveRefreshToken } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
 type Building = { _id: string; name: string; address: string };
 
@@ -64,109 +68,94 @@ export default function SignUpPage() {
     }
   }
 
+  const passwordStrength = Math.min(4, Math.floor(form.password.length / 3));
+
   return (
     <div className="min-h-screen flex">
       {/* Left — form */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-center px-4 sm:px-8 py-8 sm:py-12 max-w-xl mx-auto lg:mx-0">
-        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-blue-600 mb-8">
-          <Car className="w-6 h-6" />
-          GarKar
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-20 py-12">
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary mb-8">
+          <Car className="w-5 h-5" /> GarKar
         </Link>
 
-        <span className="inline-block text-xs font-semibold tracking-widest text-blue-600 uppercase mb-2">
-          Hyper-Local Car Sharing
-        </span>
-        <h1 className="text-3xl font-bold text-gray-900 mb-1">Join the Community</h1>
-        <p className="text-gray-500 mb-8">Exclusively for residents of verified apartment complexes.</p>
+        <div className="max-w-sm w-full">
+          <Badge variant="outline" className="mb-4 text-xs border-primary/30 text-primary bg-primary/5">
+            Residents only
+          </Badge>
+          <h1 className="text-2xl font-bold text-foreground mb-1">Create your account</h1>
+          <p className="text-muted-foreground text-sm mb-8">Exclusively for verified apartment residents.</p>
 
-        {/* Step indicator */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-sm font-bold flex items-center justify-center">1</div>
-            <span className="text-sm font-medium text-gray-900">Account Details</span>
-          </div>
-          <div className="h-px flex-1 bg-gray-200" />
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-gray-200 text-gray-500 text-sm font-bold flex items-center justify-center">2</div>
-            <span className="text-sm text-gray-400">Select Building</span>
-          </div>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
-              <input
-                type="text"
-                placeholder="John"
-                value={form.firstName}
-                onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
-              <input
-                type="text"
-                placeholder="Doe"
-                value={form.lastName}
-                onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
-                required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
-            <input
-              type="email"
-              placeholder="john@example.com"
-              value={form.email}
-              onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Password <span className="text-gray-400 font-normal">Min. 8 characters</span>
-            </label>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-              minLength={8}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            {/* Password strength bar */}
-            <div className="flex gap-1 mt-1.5">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className={`h-1 flex-1 rounded-full ${
-                    form.password.length >= i * 3
-                      ? i <= 2 ? 'bg-blue-400' : 'bg-blue-600'
-                      : 'bg-gray-200'
-                  }`}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="firstName">First name</Label>
+                <Input
+                  id="firstName"
+                  placeholder="John"
+                  value={form.firstName}
+                  onChange={(e) => setForm((f) => ({ ...f, firstName: e.target.value }))}
+                  required
                 />
-              ))}
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="lastName">Last name</Label>
+                <Input
+                  id="lastName"
+                  placeholder="Doe"
+                  value={form.lastName}
+                  onChange={(e) => setForm((f) => ({ ...f, lastName: e.target.value }))}
+                  required
+                />
+              </div>
             </div>
-          </div>
 
-          {/* Building search */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1">
-              <MapPin className="w-4 h-4 text-blue-600" /> Find Your Building
-            </label>
-            <div className="flex gap-2 mb-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="Search building..."
+            <div className="space-y-1.5">
+              <Label htmlFor="email">Email address</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="john@example.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                required
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="password">
+                Password <span className="text-muted-foreground font-normal text-xs">min. 8 characters</span>
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+                minLength={8}
+                required
+              />
+              {form.password.length > 0 && (
+                <div className="flex gap-1 mt-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-colors ${
+                        passwordStrength >= i ? 'bg-primary' : 'bg-muted'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Building search */}
+            <div className="space-y-1.5">
+              <Label className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-primary" /> Your building
+              </Label>
+              <div className="relative">
+                <Input
+                  placeholder="Search your building…"
                   value={form.buildingSearch}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, buildingSearch: e.target.value, buildingId: '' }));
@@ -174,28 +163,26 @@ export default function SignUpPage() {
                     setShowDropdown(true);
                   }}
                   onFocus={() => setShowDropdown(true)}
-                  className="w-full border border-blue-400 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className={selectedBuilding ? 'border-primary ring-1 ring-primary/30' : ''}
                 />
+                {selectedBuilding && (
+                  <CheckCircle className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-primary" />
+                )}
                 {showDropdown && filteredBuildings.length > 0 && (
-                  <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                    {filteredBuildings.map((b) => (
+                  <div className="absolute z-20 w-full mt-1 bg-popover border border-border rounded-xl shadow-lg overflow-hidden">
+                    {filteredBuildings.slice(0, 6).map((b) => (
                       <button
                         key={b._id}
                         type="button"
                         onClick={() => selectBuilding(b)}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 text-left"
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/60 text-left transition-colors"
                       >
-                        <div className="w-8 h-8 bg-blue-100 rounded flex items-center justify-center">
-                          <Car className="w-4 h-4 text-blue-600" />
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center shrink-0">
+                          <MapPin className="w-4 h-4 text-primary" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-900 flex items-center gap-1">
-                            {b.name}
-                            {selectedBuilding?._id === b._id && (
-                              <CheckCircle className="w-4 h-4 text-blue-600" />
-                            )}
-                          </p>
-                          <p className="text-xs text-gray-500">{b.address}</p>
+                          <p className="text-sm font-medium text-foreground">{b.name}</p>
+                          <p className="text-xs text-muted-foreground">{b.address}</p>
                         </div>
                       </button>
                     ))}
@@ -203,79 +190,71 @@ export default function SignUpPage() {
                 )}
               </div>
             </div>
-          </div>
 
-          {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-destructive bg-destructive/10 px-3 py-2 rounded-lg">{error}</p>
+            )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
-          >
-            {loading ? 'Creating account…' : 'Create Account'}
-          </button>
+            <Button type="submit" disabled={loading} className="w-full h-11">
+              {loading ? 'Creating account…' : 'Create account'}
+            </Button>
 
-          <p className="text-xs text-center text-gray-500">
-            By signing up, you agree to our{' '}
-            <Link href="/terms" className="text-blue-600 hover:underline">Terms of Service</Link> and{' '}
-            <Link href="/privacy" className="text-blue-600 hover:underline">Privacy Policy</Link>.
-            Residency verification required upon first rental.
+            <p className="text-xs text-center text-muted-foreground">
+              By signing up you agree to our{' '}
+              <Link href="/terms" className="text-primary hover:underline">Terms</Link> and{' '}
+              <Link href="/privacy" className="text-primary hover:underline">Privacy Policy</Link>.
+            </p>
+          </form>
+
+          <p className="mt-6 text-sm text-center text-muted-foreground">
+            Already have an account?{' '}
+            <Link href="/auth/login" className="text-primary font-medium hover:underline">Log in</Link>
           </p>
-        </form>
-
-        <p className="mt-6 text-sm text-center text-gray-600">
-          Already have an account?{' '}
-          <Link href="/auth/login" className="text-blue-600 font-medium hover:underline">Log in</Link>
-        </p>
+        </div>
       </div>
 
-      {/* Right — map preview */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gray-100 flex-col justify-center items-center p-12 relative overflow-hidden">
-        {/* Map placeholder */}
-        <div className="w-full h-full absolute inset-0 bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
-          <div className="text-center">
-            <div className="w-64 h-64 bg-green-100 rounded-full opacity-40 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-            <div className="w-40 h-40 bg-blue-100 rounded-full opacity-30 absolute top-1/3 left-1/3" />
-          </div>
+      {/* Right — building preview */}
+      <div className="hidden lg:flex lg:w-1/2 bg-muted/40 flex-col justify-center items-center p-12 relative overflow-hidden border-l border-border">
+        <div className="pointer-events-none absolute inset-0">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-3xl" />
         </div>
 
-        {/* Building verified card */}
         {selectedBuilding ? (
-          <div className="relative z-10 bg-white rounded-2xl shadow-xl p-6 max-w-sm w-full">
-            <div className="flex items-start justify-between mb-3">
+          <div className="relative z-10 bg-background border border-border rounded-2xl shadow-xl p-7 max-w-sm w-full">
+            <div className="flex items-start justify-between mb-4">
               <div>
-                <p className="text-xs font-semibold tracking-widest text-blue-600 uppercase mb-1">Selected Building</p>
-                <h3 className="text-lg font-bold text-gray-900">{selectedBuilding.name}</h3>
-                <p className="text-sm text-green-600 font-medium">Official GarKar partner building</p>
+                <Badge className="mb-2 text-xs">GarKar Partner</Badge>
+                <h3 className="text-lg font-bold text-foreground">{selectedBuilding.name}</h3>
+                <p className="text-sm text-muted-foreground">{selectedBuilding.address}</p>
               </div>
-              <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+                <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              This is an official GarKar partner community. Enjoy seamless pick-up and drop-off right from your residential parking garage.
+            <p className="text-sm text-muted-foreground mb-5">
+              This building is an official GarKar partner. Enjoy seamless pick-up and drop-off from your residential parking garage.
             </p>
             <div className="grid grid-cols-2 gap-3">
-              <div className="flex items-center gap-2 border border-gray-200 rounded-lg p-3">
-                <Key className="w-4 h-4 text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold text-gray-900">Keyless Entry</p>
-                  <p className="text-xs text-gray-500">Unlock via app</p>
+              {[
+                { label: 'Keyless Entry', sub: 'Unlock via app' },
+                { label: 'Full Coverage', sub: 'Insurance included' },
+                { label: 'Verified Hosts', sub: 'Neighbors only' },
+                { label: 'Instant Book', sub: 'No approval wait' },
+              ].map(({ label, sub }) => (
+                <div key={label} className="border border-border rounded-lg p-3">
+                  <p className="text-xs font-semibold text-foreground">{label}</p>
+                  <p className="text-xs text-muted-foreground">{sub}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 border border-gray-200 rounded-lg p-3">
-                <Shield className="w-4 h-4 text-blue-600" />
-                <div>
-                  <p className="text-xs font-semibold text-gray-900">Full Coverage</p>
-                  <p className="text-xs text-gray-500">Insurance included</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         ) : (
           <div className="relative z-10 text-center">
-            <Car className="w-16 h-16 text-blue-400 mx-auto mb-4" />
-            <p className="text-gray-500 text-sm">Search for your building to see available cars</p>
+            <div className="w-20 h-20 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-5">
+              <Car className="w-10 h-10 text-primary" />
+            </div>
+            <h3 className="font-semibold text-foreground mb-2">Find your building</h3>
+            <p className="text-sm text-muted-foreground max-w-xs">Search above to see the cars available at your address.</p>
           </div>
         )}
       </div>

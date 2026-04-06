@@ -3,9 +3,13 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Car } from 'lucide-react';
+import { Car, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
 import { saveAuth, saveRefreshToken } from '@/lib/auth';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
 
 function LoginForm() {
   const searchParams = useSearchParams();
@@ -29,11 +33,9 @@ function LoginForm() {
       const data = await api.login({ username, password });
       saveAuth(data.token, data.userId);
       if (data.refreshToken) saveRefreshToken(data.refreshToken);
-
       if (data.isVerified) {
         window.location.href = '/browse';
       } else {
-        // Account exists but residency not yet verified
         window.location.href = `/verify/residency?userId=${data.userId}`;
       }
     } catch (err: unknown) {
@@ -44,69 +46,97 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <Link href="/" className="inline-flex items-center gap-2 font-bold text-2xl text-blue-600 mb-6">
-            <Car className="w-7 h-7" />
-            GarKar
-          </Link>
-          <h1 className="text-2xl font-bold text-gray-900">Welcome back</h1>
-          <p className="text-gray-500 mt-1">Log in to your community account</p>
-        </div>
-
-        {justApproved && (
-          <div className="mb-4 bg-green-50 border border-green-200 text-green-800 rounded-xl px-4 py-3 text-sm font-medium text-center">
-            🎉 Your account has been approved! Log in to get started.
-          </div>
-        )}
-
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-          <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="min-h-screen flex">
+      {/* Left — brand panel */}
+      <div className="hidden lg:flex lg:w-1/2 bg-primary flex-col justify-between p-12">
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-white">
+          <Car className="w-5 h-5" /> GarKar
+        </Link>
+        <div>
+          <blockquote className="text-white/90 text-2xl font-medium leading-snug mb-6">
+            &ldquo;I saved over $400 last month just by renting from my neighbors instead of traditional rental companies.&rdquo;
+          </blockquote>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white font-semibold">
+              M
+            </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-              <input
-                type="text"
+              <p className="text-white font-medium text-sm">Marcus T.</p>
+              <p className="text-white/60 text-xs">Resident, Crystal Flats · 34 trips</p>
+            </div>
+          </div>
+        </div>
+        <p className="text-white/40 text-xs">© 2025 GarKar Technologies Inc.</p>
+      </div>
+
+      {/* Right — form */}
+      <div className="w-full lg:w-1/2 flex flex-col justify-center px-6 sm:px-12 lg:px-16 xl:px-24 py-12">
+        {/* Mobile logo */}
+        <Link href="/" className="flex items-center gap-2 font-bold text-xl text-primary mb-8 lg:hidden">
+          <Car className="w-5 h-5" /> GarKar
+        </Link>
+
+        <div className="max-w-sm w-full mx-auto lg:mx-0">
+          <h1 className="text-2xl font-bold text-foreground mb-1">Welcome back</h1>
+          <p className="text-muted-foreground text-sm mb-8">Log in to your community account</p>
+
+          {justApproved && (
+            <div className="mb-6 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0 text-green-600" />
+              <span className="font-medium">Your account has been approved! You&apos;re all set to start.</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
                 name="username"
+                type="text"
                 autoComplete="username"
-                placeholder="your username"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="your@email.com"
               />
             </div>
 
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
-                <Link href="/auth/forgot-password" className="text-xs text-blue-600 hover:underline">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/auth/forgot-password" className="text-xs text-primary hover:underline">
                   Forgot password?
                 </Link>
               </div>
-              <input
-                type="password"
+              <Input
+                id="password"
                 name="password"
+                type="password"
                 autoComplete="current-password"
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="••••••••"
               />
             </div>
 
-            {error && <p className="text-sm text-red-600">{error}</p>}
+            {error && (
+              <p className="text-sm text-destructive rounded-lg bg-destructive/10 px-3 py-2">{error}</p>
+            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white font-semibold py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
-            >
-              {loading ? 'Logging in…' : 'Log In'}
-            </button>
+            <Button type="submit" disabled={loading} className="w-full h-11">
+              {loading ? 'Signing in…' : 'Sign in'}
+            </Button>
           </form>
-        </div>
 
-        <p className="mt-6 text-sm text-center text-gray-600">
-          Don&apos;t have an account?{' '}
-          <Link href="/auth/signup" className="text-blue-600 font-medium hover:underline">
-            Sign up
-          </Link>
-        </p>
+          <div className="my-6 flex items-center gap-3">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">or</span>
+            <Separator className="flex-1" />
+          </div>
+
+          <p className="text-center text-sm text-muted-foreground">
+            Don&apos;t have an account?{' '}
+            <Link href="/auth/signup" className="text-primary font-medium hover:underline">
+              Sign up free
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
