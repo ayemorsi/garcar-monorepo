@@ -1,4 +1,4 @@
-const { jwtSecret: secretKey, mongoUrl, port: configPort } = require('./config');
+const { jwtSecret: secretKey, mongoUrl, port: configPort, frontendUrl, nodeEnv } = require('./config');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -40,7 +40,7 @@ function rateLimit(maxRequests, windowMs) {
 const authLimiter = rateLimit(20, 15 * 60 * 1000); // 20 per 15 minutes
 
 // Middleware
-const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:3000').split(',').map(s => s.trim());
+const allowedOrigins = frontendUrl.split(',').map(s => s.trim());
 app.use(cors({
   origin: (origin, callback) => {
     // Allow server-to-server (no origin), listed origins, and all vercel.app previews
@@ -357,7 +357,7 @@ app.get('/api/host/stats', authenticate, async (req, res) => {
 });
 
 // Start the server (local dev only)
-if (process.env.NODE_ENV !== 'production') {
+if (nodeEnv !== 'production') {
   app.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
   });
