@@ -363,8 +363,8 @@ app.get('/api/host/stats', authenticate, async (req, res) => {
   }
 });
 
-// Start the server (local dev only)
-if (nodeEnv !== 'production') {
+// Start the server (local dev only, not in test or production)
+if (nodeEnv === 'development') {
   app.listen(port, () => {
     logger.info(`Server running at http://localhost:${port}`);
   });

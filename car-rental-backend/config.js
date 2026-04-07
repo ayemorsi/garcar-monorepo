@@ -11,7 +11,7 @@ const schema = z.object({
   PORT:         z.coerce.number().int().positive().default(5001),
   NODE_ENV:     z.enum(['development', 'production', 'test']).default('development'),
   FRONTEND_URL: z.string().default('http://localhost:3000'),
-  LOG_LEVEL:    z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
+  LOG_LEVEL:    z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
 });
 
 const result = schema.safeParse(process.env);
