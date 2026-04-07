@@ -5,6 +5,7 @@ const User = require('../models/User');
 const router = express.Router();
 
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -27,7 +28,7 @@ router.get('/users/me', authenticate, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
-    console.error('Error fetching user profile:', error);
+    logger.error({ err: error }, 'Error fetching user profile');
     res.status(500).json({ message: 'Error fetching user profile' });
   }
 });
@@ -44,7 +45,7 @@ router.put('/users/me', authenticate, async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
-    console.error('Error updating user profile:', error);
+    logger.error({ err: error }, 'Error updating user profile');
     res.status(500).json({ message: 'Error updating user profile' });
   }
 });
@@ -63,7 +64,7 @@ router.put('/users/me/password', authenticate, async (req, res) => {
     await user.save();
     res.json({ message: 'Password updated successfully' });
   } catch (error) {
-    console.error('Error updating password:', error);
+    logger.error({ err: error }, 'Error updating password');
     res.status(500).json({ message: 'Error updating password' });
   }
 });
@@ -77,7 +78,7 @@ router.get('/users/:id', async (req, res) => {
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
-    console.error('Error fetching user:', error);
+    logger.error({ err: error }, 'Error fetching user');
     res.status(500).json({ message: 'Error fetching user' });
   }
 });

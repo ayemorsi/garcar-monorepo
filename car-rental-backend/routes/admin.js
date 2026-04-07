@@ -9,6 +9,7 @@ const AppSettings = require('../models/AppSettings');
 const Building = require('../models/Building');
 
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 // ─── Middleware ────────────────────────────────────────────────────────────────
 
@@ -71,7 +72,7 @@ router.get('/admin/stats', authenticate, adminOnly, async (req, res) => {
       buildings,
     });
   } catch (error) {
-    console.error('Error fetching admin stats:', error);
+    logger.error({ err: error }, 'Error fetching admin stats');
     res.status(500).json({ message: 'Error fetching admin stats' });
   }
 });
@@ -112,7 +113,7 @@ router.get('/admin/activity', authenticate, adminOnly, async (req, res) => {
 
     res.json(all.slice(0, 50));
   } catch (error) {
-    console.error('Error fetching admin activity:', error);
+    logger.error({ err: error }, 'Error fetching admin activity');
     res.status(500).json({ message: 'Error fetching admin activity' });
   }
 });
@@ -167,7 +168,7 @@ router.get('/admin/users', authenticate, adminOnly, async (req, res) => {
 
     res.json(usersWithCarCount);
   } catch (error) {
-    console.error('Error fetching admin users:', error);
+    logger.error({ err: error }, 'Error fetching admin users');
     res.status(500).json({ message: 'Error fetching users' });
   }
 });
@@ -190,7 +191,7 @@ router.get('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error fetching user:', error);
+    logger.error({ err: error }, 'Error fetching user');
     res.status(500).json({ message: 'Error fetching user' });
   }
 });
@@ -212,7 +213,7 @@ router.put('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
 
     res.json(user);
   } catch (error) {
-    console.error('Error updating user:', error);
+    logger.error({ err: error }, 'Error updating user');
     res.status(500).json({ message: 'Error updating user' });
   }
 });
@@ -229,7 +230,7 @@ router.delete('/admin/users/:id', authenticate, adminOnly, async (req, res) => {
     ]);
     res.json({ message: 'User deleted' });
   } catch (error) {
-    console.error('Error deleting user:', error);
+    logger.error({ err: error }, 'Error deleting user');
     res.status(500).json({ message: 'Error deleting user' });
   }
 });
@@ -250,7 +251,7 @@ router.put('/admin/users/:id/reset-password', authenticate, adminOnly, async (re
 
     res.json({ tempPassword });
   } catch (error) {
-    console.error('Error resetting password:', error);
+    logger.error({ err: error }, 'Error resetting password');
     res.status(500).json({ message: 'Error resetting password' });
   }
 });
@@ -280,7 +281,7 @@ router.get('/admin/listings', authenticate, adminOnly, async (req, res) => {
     const cars = await Car.find(filter).populate('userId', 'firstName lastName username building');
     res.json(cars);
   } catch (error) {
-    console.error('Error fetching admin listings:', error);
+    logger.error({ err: error }, 'Error fetching admin listings');
     res.status(500).json({ message: 'Error fetching listings' });
   }
 });
@@ -298,7 +299,7 @@ router.put('/admin/listings/:id', authenticate, adminOnly, async (req, res) => {
 
     res.json(car);
   } catch (error) {
-    console.error('Error updating listing:', error);
+    logger.error({ err: error }, 'Error updating listing');
     res.status(500).json({ message: 'Error updating listing' });
   }
 });
@@ -312,7 +313,7 @@ router.delete('/admin/listings/:id', authenticate, adminOnly, async (req, res) =
 
     res.json({ message: 'Listing deleted' });
   } catch (error) {
-    console.error('Error deleting listing:', error);
+    logger.error({ err: error }, 'Error deleting listing');
     res.status(500).json({ message: 'Error deleting listing' });
   }
 });
@@ -332,7 +333,7 @@ router.get('/admin/bookings', authenticate, adminOnly, async (req, res) => {
 
     res.json(bookings);
   } catch (error) {
-    console.error('Error fetching admin bookings:', error);
+    logger.error({ err: error }, 'Error fetching admin bookings');
     res.status(500).json({ message: 'Error fetching bookings' });
   }
 });
@@ -347,7 +348,7 @@ router.get('/admin/settings', authenticate, adminOnly, async (req, res) => {
     }
     res.json(settings);
   } catch (error) {
-    console.error('Error fetching settings:', error);
+    logger.error({ err: error }, 'Error fetching settings');
     res.status(500).json({ message: 'Error fetching settings' });
   }
 });
@@ -367,7 +368,7 @@ router.put('/admin/settings', authenticate, adminOnly, async (req, res) => {
     }
     res.json(settings);
   } catch (error) {
-    console.error('Error updating settings:', error);
+    logger.error({ err: error }, 'Error updating settings');
     res.status(500).json({ message: 'Error updating settings' });
   }
 });
@@ -379,7 +380,7 @@ router.get('/admin/pending-users', authenticate, adminOnly, async (req, res) => 
     const users = await User.find({ approved: false }).select('-password');
     res.json(users);
   } catch (error) {
-    console.error('Error fetching pending users:', error);
+    logger.error({ err: error }, 'Error fetching pending users');
     res.status(500).json({ message: 'Error fetching pending users' });
   }
 });
@@ -390,7 +391,7 @@ router.put('/admin/users/:id/approve', authenticate, adminOnly, async (req, res)
     if (!user) return res.status(404).json({ message: 'User not found' });
     res.json(user);
   } catch (error) {
-    console.error('Error approving user:', error);
+    logger.error({ err: error }, 'Error approving user');
     res.status(500).json({ message: 'Error approving user' });
   }
 });
@@ -404,7 +405,7 @@ router.get('/admin/online-users', authenticate, adminOnly, async (req, res) => {
       .select('_id username lastSeen role');
     res.json(users);
   } catch (error) {
-    console.error('Error fetching online users:', error);
+    logger.error({ err: error }, 'Error fetching online users');
     res.status(500).json({ message: 'Error fetching online users' });
   }
 });
@@ -461,7 +462,7 @@ router.post('/admin/promote', authenticate, async (req, res) => {
     await User.findByIdAndUpdate(req.user.userId, { role: 'admin' });
     res.json({ message: 'Promoted to admin' });
   } catch (error) {
-    console.error('Error promoting to admin:', error);
+    logger.error({ err: error }, 'Error promoting to admin');
     res.status(500).json({ message: 'Error promoting to admin' });
   }
 });
@@ -496,7 +497,7 @@ router.post('/admin/migrate/building-ids', authenticate, adminOnly, async (req, 
 
     res.json({ message: 'Migration complete', userFixed, carFixed });
   } catch (err) {
-    console.error('Migration error:', err);
+    logger.error({ err }, 'Migration error');
     res.status(500).json({ message: 'Migration failed', error: err.message });
   }
 });

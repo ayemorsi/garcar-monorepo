@@ -5,6 +5,7 @@ const Booking = require('../models/Booking');
 
 const router = express.Router();
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -42,7 +43,7 @@ router.post('/reviews', authenticate, async (req, res) => {
     await review.save();
     res.status(201).json(review);
   } catch (err) {
-    console.error('Error submitting review:', err);
+    logger.error({ err }, 'Error submitting review');
     res.status(500).json({ message: 'Error submitting review' });
   }
 });
@@ -55,7 +56,7 @@ router.get('/reviews/user/:userId', async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(reviews);
   } catch (err) {
-    console.error('Error fetching reviews:', err);
+    logger.error({ err }, 'Error fetching reviews');
     res.status(500).json({ message: 'Error fetching reviews' });
   }
 });

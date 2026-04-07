@@ -13,6 +13,7 @@ const messageRoutes = require('./routes/message');
 const userRoutes = require('./routes/user');
 
 const { jwtSecret: secretKey, mongoUrl, port } = require('./config');
+const logger = require('./lib/logger');
 
 const app = express();
 
@@ -23,10 +24,10 @@ app.use(bodyParser.json());
 // Connect to MongoDB
 mongoose.connect(mongoUrl, { useNewUrlParser: true, useUnifiedTopology: true })
     .then(() => {
-        console.log('Connected to MongoDB');
+        logger.info('Connected to MongoDB');
     })
     .catch(err => {
-        console.error('MongoDB connection error:', err);
+        logger.error({ err }, 'MongoDB connection error');
     });
 
 // Middleware to authenticate and get user ID from token
@@ -59,7 +60,7 @@ app.post('/api/register', async (req, res) => {
     await user.save();
     res.status(201).send('User registered successfully');
   } catch (error) {
-    console.error('Error registering user:', error);
+    logger.error({ err: error }, 'Error registering user');
     res.status(500).send('Error registering user');
   }
 });
@@ -76,7 +77,7 @@ app.post('/api/login', async (req, res) => {
       res.status(401).send('Invalid username or password');
     }
   } catch (error) {
-    console.error('Error logging in:', error);
+    logger.error({ err: error }, 'Error logging in');
     res.status(500).send('Error logging in');
   }
 });
@@ -100,7 +101,7 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
     const token = jwt.sign({ userId: user._id, username: user.username, isVerified: user.isVerified }, secretKey, { expiresIn: '1h' });
     res.json({ token });
   } catch (error) {
-    console.error('Error submitting verification data:', error);
+    logger.error({ err: error }, 'Error submitting verification data');
     res.status(500).send('Error submitting verification data');
   }
 });
@@ -111,7 +112,7 @@ app.get('/api/verification/:userId', authenticate, async (req, res) => {
     const user = await User.findById(req.params.userId);
     res.json(user.verificationData);
   } catch (error) {
-    console.error('Error fetching verification data:', error);
+    logger.error({ err: error }, 'Error fetching verification data');
     res.status(500).send('Error fetching verification data');
   }
 });
@@ -142,7 +143,7 @@ app.get('/api/host/stats', authenticate, async (req, res) => {
       carsCount,
     });
   } catch (error) {
-    console.error('Error fetching host stats:', error);
+    logger.error({ err: error }, 'Error fetching host stats');
     res.status(500).json({ message: 'Error fetching host stats' });
   }
 });
@@ -155,5 +156,5 @@ app.use('/api', userRoutes);
 
 // Start the server
 app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    logger.info(`Server running at http://localhost:${port}`);
 });

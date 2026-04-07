@@ -16,6 +16,7 @@ const upload = multer({
 });
 
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -129,7 +130,7 @@ router.post('/bookings', authenticate, async (req, res) => {
 
     res.status(201).json(booking);
   } catch (error) {
-    console.error('Error creating booking:', error);
+    logger.error({ err: error }, 'Error creating booking');
     res.status(500).json({ message: 'Error creating booking' });
   }
 });
@@ -143,7 +144,7 @@ router.get('/bookings', authenticate, async (req, res) => {
       .sort({ startDate: -1 });
     res.json(bookings || []);
   } catch (error) {
-    console.error('Error fetching bookings:', error);
+    logger.error({ err: error }, 'Error fetching bookings');
     res.status(500).json({ message: 'Error fetching bookings' });
   }
 });
@@ -157,7 +158,7 @@ router.get('/bookings/owner', authenticate, async (req, res) => {
       .sort({ createdAt: -1 });
     res.json(bookings || []);
   } catch (error) {
-    console.error('Error fetching owner bookings:', error);
+    logger.error({ err: error }, 'Error fetching owner bookings');
     res.status(500).json({ message: 'Error fetching owner bookings' });
   }
 });
@@ -171,7 +172,7 @@ router.get('/bookings/:id', authenticate, async (req, res) => {
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
     res.json(booking);
   } catch (error) {
-    console.error('Error fetching booking:', error);
+    logger.error({ err: error }, 'Error fetching booking');
     res.status(500).json({ message: 'Error fetching booking' });
   }
 });
@@ -213,7 +214,7 @@ router.put('/bookings/:id', authenticate, async (req, res) => {
 
     res.json(booking);
   } catch (error) {
-    console.error('Error updating booking:', error);
+    logger.error({ err: error }, 'Error updating booking');
     res.status(500).json({ message: 'Error updating booking' });
   }
 });
@@ -236,7 +237,7 @@ router.post('/bookings/:id/checkin', authenticate, upload.array('photos', 20), a
     await booking.save();
     res.json(booking);
   } catch (error) {
-    console.error('Error checking in:', error);
+    logger.error({ err: error }, 'Error checking in');
     res.status(500).json({ message: 'Error checking in' });
   }
 });
@@ -271,7 +272,7 @@ router.post('/bookings/:id/checkout', authenticate, upload.array('photos', 20), 
     }
     res.json(booking);
   } catch (error) {
-    console.error('Error checking out:', error);
+    logger.error({ err: error }, 'Error checking out');
     res.status(500).json({ message: 'Error checking out' });
   }
 });

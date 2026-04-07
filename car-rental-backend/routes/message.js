@@ -5,6 +5,7 @@ const User = require('../models/User');
 const router = express.Router();
 
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 const authenticate = (req, res, next) => {
   const authHeader = req.headers.authorization;
@@ -68,7 +69,7 @@ router.get('/conversations', authenticate, async (req, res) => {
 
     res.json(conversations);
   } catch (error) {
-    console.error('Error fetching conversations:', error);
+    logger.error({ err: error }, 'Error fetching conversations');
     res.status(500).json({ message: 'Error fetching conversations' });
   }
 });
@@ -94,7 +95,7 @@ router.get('/messages/:otherUserId', authenticate, async (req, res) => {
 
     res.json(messages || []);
   } catch (error) {
-    console.error('Error fetching messages:', error);
+    logger.error({ err: error }, 'Error fetching messages');
     res.status(500).json({ message: 'Error fetching messages' });
   }
 });
@@ -112,7 +113,7 @@ router.post('/messages', authenticate, async (req, res) => {
     await message.save();
     res.status(201).json(message);
   } catch (error) {
-    console.error('Error sending message:', error);
+    logger.error({ err: error }, 'Error sending message');
     res.status(500).json({ message: 'Error sending message' });
   }
 });

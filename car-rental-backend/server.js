@@ -1,4 +1,5 @@
 const { jwtSecret: secretKey, mongoUrl, port: configPort, frontendUrl, nodeEnv } = require('./config');
+const logger = require('./lib/logger');
 const express = require('express');
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
@@ -72,6 +73,12 @@ app.use((req, res, next) => {
   });
 });
 
+// Request logging
+app.use((req, _res, next) => {
+  logger.info({ method: req.method, url: req.url }, 'request');
+  next();
+});
+
 // Connect to MongoDB — cached for serverless reuse
 let dbConnected = false;
 async function connectDB() {
@@ -98,7 +105,7 @@ app.use(async (req, res, next) => {
     await connectDB();
     next();
   } catch (err) {
-    console.error('DB connection failed:', err);
+    logger.error({ err }, 'DB connection failed');
     res.status(500).json({ message: 'Database connection failed' });
   }
 });
@@ -152,7 +159,7 @@ app.post('/api/register', authLimiter, async (req, res) => {
     await user.save();
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    console.error('Error registering user:', error);
+    logger.error({ err: error }, 'Error registering user');
     res.status(500).json({ message: 'Error registering user' });
   }
 });
@@ -173,7 +180,7 @@ app.post('/api/login', authLimiter, async (req, res) => {
       res.status(401).send('Invalid username or password');
     }
   } catch (error) {
-    console.error('Error logging in:', error);
+    logger.error({ err: error }, 'Error logging in');
     res.status(500).send('Error logging in');
   }
 });
@@ -191,7 +198,7 @@ app.post('/api/verify/:userId', authenticate, upload.single('verificationDocumen
     });
     res.json({ message: 'Document submitted. Pending admin review.' });
   } catch (error) {
-    console.error('Error submitting verification data:', error);
+    logger.error({ err: error }, 'Error submitting verification data');
     res.status(500).send('Error submitting verification data');
   }
 });
@@ -235,7 +242,7 @@ app.get('/api/verification/:userId', authenticate, async (req, res) => {
     const { verificationDocument, ...meta } = user.verificationData?.toObject?.() ?? user.verificationData ?? {};
     res.json({ ...meta, hasDocument: !!verificationDocument });
   } catch (error) {
-    console.error('Error fetching verification data:', error);
+    logger.error({ err: error }, 'Error fetching verification data');
     res.status(500).json({ message: 'Error fetching verification data' });
   }
 });
@@ -319,7 +326,7 @@ app.get('/api/vin/:vin', async (req, res) => {
       trim: get('Trim') || '',
     });
   } catch (err) {
-    console.error('VIN decode error:', err);
+    logger.error({ err }, 'VIN decode error');
     res.status(500).json({ message: 'VIN lookup failed — please try again or enter details manually.' });
   }
 });
@@ -351,7 +358,7 @@ app.get('/api/host/stats', authenticate, async (req, res) => {
         .reduce((sum, b) => sum + (b.totalPrice || 0), 0),
     });
   } catch (error) {
-    console.error('Error fetching host stats:', error);
+    logger.error({ err: error }, 'Error fetching host stats');
     res.status(500).json({ message: 'Error fetching host stats' });
   }
 });
@@ -359,7 +366,7 @@ app.get('/api/host/stats', authenticate, async (req, res) => {
 // Start the server (local dev only)
 if (nodeEnv !== 'production') {
   app.listen(port, () => {
-    console.log(`Server running at http://localhost:${port}`);
+    logger.info(`Server running at http://localhost:${port}`);
   });
 }
 
@@ -374,7 +381,7 @@ app.put('/api/cars/:carId', authenticate, async (req, res) => {
     const car = await Car.findByIdAndUpdate(req.params.carId, { price }, { new: true });
     res.json(car);
   } catch (error) {
-    console.error('Error updating car price:', error);
+    logger.error({ err: error }, 'Error updating car price');
     res.status(500).send('Error updating car price');
   }
 });
