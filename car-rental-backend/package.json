@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "migrate:up": "migrate-mongo up",
+    "migrate:down": "migrate-mongo down",
+    "migrate:status": "migrate-mongo status"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -21,5 +24,8 @@
     "zod": "^4.3.6"
   },
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "migrate-mongo": "^14.0.7"
+  }
 }
