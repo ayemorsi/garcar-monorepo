@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Car, MapPin, CheckCircle } from 'lucide-react';
 import { api } from '@/lib/api';
+import { env } from '@/lib/env';
 import { saveAuth, saveRefreshToken } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,7 +31,7 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    fetch(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001'}/api/buildings`)
+    fetch(`${env.NEXT_PUBLIC_API_URL}/buildings`)
       .then((r) => r.json())
       .then(setBuildings)
       .catch(() => {});

@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Car, Clock, CheckCircle, Mail } from 'lucide-react';
 import { getAuth, clearAuth } from '@/lib/auth';
+import { env } from '@/lib/env';
 
-const BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+const BASE = env.NEXT_PUBLIC_API_URL;
 
 export default function VerificationPendingPage() {
   const router = useRouter();

@@ -6,6 +6,7 @@ const jwt = require('jsonwebtoken');
 const router = express.Router();
 
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 // Middleware to authenticate and get user ID from token
 const authenticate = (req, res, next) => {
@@ -49,7 +50,7 @@ router.post('/cars', authenticate, async (req, res) => {
     await car.save();
     res.status(201).json(car);
   } catch (error) {
-    console.error('Error uploading car:', error);
+    logger.error({ err: error }, 'Error uploading car');
     res.status(500).json({ message: 'Error uploading car' });
   }
 });
@@ -60,7 +61,7 @@ router.get('/user-cars', authenticate, async (req, res) => {
     const cars = await Car.find({ userId: req.userId });
     res.json(cars || []);
   } catch (error) {
-    console.error('Error fetching user cars:', error);
+    logger.error({ err: error }, 'Error fetching user cars');
     res.status(500).json({ message: 'Error fetching cars' });
   }
 });
@@ -131,7 +132,7 @@ router.get('/cars', async (req, res) => {
 
     res.json(cars);
   } catch (error) {
-    console.error('Error fetching cars:', error);
+    logger.error({ err: error }, 'Error fetching cars');
     res.status(500).json({ message: 'Error fetching cars' });
   }
 });
@@ -146,7 +147,7 @@ router.get('/cars/:id', async (req, res) => {
     if (!car) return res.status(404).json({ message: 'Car not found' });
     res.json(car);
   } catch (error) {
-    console.error('Error fetching car:', error);
+    logger.error({ err: error }, 'Error fetching car');
     res.status(500).json({ message: 'Error fetching car' });
   }
 });
@@ -158,7 +159,7 @@ router.delete('/cars/:id', authenticate, async (req, res) => {
     if (!car) return res.status(404).json({ message: 'Car not found' });
     res.status(200).json({ message: 'Car deleted' });
   } catch (error) {
-    console.error('Error deleting car:', error);
+    logger.error({ err: error }, 'Error deleting car');
     res.status(500).json({ message: 'Error deleting car' });
   }
 });
@@ -189,7 +190,7 @@ router.put('/cars/:id', authenticate, async (req, res) => {
     if (!car) return res.status(404).json({ message: 'Car not found' });
     res.json(car);
   } catch (error) {
-    console.error('Error updating car:', error);
+    logger.error({ err: error }, 'Error updating car');
     res.status(500).json({ message: 'Error updating car' });
   }
 });

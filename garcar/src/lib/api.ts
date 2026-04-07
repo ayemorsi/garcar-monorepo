@@ -1,4 +1,6 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5001/api';
+import { env } from './env';
+
+const BASE_URL = env.NEXT_PUBLIC_API_URL;
 
 export interface Notification {
   _id: string;

@@ -4,6 +4,7 @@ const Notification = require('../models/Notification');
 
 const router = express.Router();
 const { jwtSecret: secretKey } = require('../config');
+const logger = require('../lib/logger');
 
 function authenticate(req, res, next) {
   const authHeader = req.headers.authorization;
@@ -25,7 +26,7 @@ router.get('/notifications', authenticate, async (req, res) => {
     const unreadCount = await Notification.countDocuments({ userId: req.user.userId, read: false });
     res.json({ notifications, unreadCount });
   } catch (err) {
-    console.error('Error fetching notifications:', err);
+    logger.error({ err }, 'Error fetching notifications');
     res.status(500).json({ message: 'Error fetching notifications' });
   }
 });

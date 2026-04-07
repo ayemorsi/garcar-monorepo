@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Upload, X, GripVertical, Camera, Sun, Maximize, AlignHorizontalJustifyCenter } from 'lucide-react';
 import AppLayout from '@/components/AppLayout';
 import { api } from '@/lib/api';
+import { env } from '@/lib/env';
 
 interface UploadedPhoto {
   id: string;
@@ -24,7 +25,7 @@ const PHOTO_TIPS = [
   { icon: AlignHorizontalJustifyCenter, title: 'Landscape orientation', desc: 'Horizontal photos display best in our listings.' },
 ];
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5001';
+const BASE_URL = env.NEXT_PUBLIC_API_URL.replace('/api', '');
 
 export default function ListPhotosPage() {
   const router = useRouter();
